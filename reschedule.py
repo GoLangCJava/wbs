@@ -6,7 +6,7 @@
 - 同步重建：里程碑计划、WBS词典、覆盖对照WBS编码、使用说明、资源负荷文字
 用法：python3 reschedule.py
 """
-import ast, datetime as dt
+import ast, datetime as dt, re
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -66,7 +66,7 @@ def T(tid, owner, name, eff, phase, group, ai="AI生成+人工审核", deliv=Non
     TASKS[tid] = dict(id=tid, owner=owner, name=name, eff=float(eff), sched=sched, phase=phase, group=group,
                       ai=ai, deliv=deliv, deps=list(deps), remark=remark, remain=float(sched),
                       start=None, end=None, days=set(), spread=False, ms=False,
-                      factor=(AI_F[ai] if AI_F[ai] < 1 else None))
+                      factor=AI_F[ai])
     ORDER[owner].append(tid)
     return TASKS[tid]
 
@@ -479,8 +479,11 @@ def emit_leaf(code, owner, name, s, e, eff, ai, deliv=None, ms=False, remark=Non
     ws.cell(row, 10, ai)
     if dep_codes:
         ws.cell(row, 11, ",".join(dep_codes)[:250])
-    if raw is not None and factor:
-        tag = f"直估{raw:g}·AI执行×{factor}"
+    if raw is not None and factor is not None:
+        tag = f"直估{raw:g}·AI执行×{factor:g}"
+        ws.cell(row, 17, (remark + "；" + tag) if remark else tag)
+    elif raw is not None:
+        tag = f"直估{raw:g}·人工×1.0"
         ws.cell(row, 17, (remark + "；" + tag) if remark else tag)
     else:
         ws.cell(row, 17, remark)
@@ -505,7 +508,7 @@ for gcode, gname, leaves in PH1:
     g_first = g_row + 1
     for (lcode, owner, eff, s, e, ai, name, deliv, ms) in leaves:
         sc = round(eff * AI_F[ai], 2)
-        emit_leaf(lcode, owner, name, s, e, sc, ai, deliv, ms, raw=eff, factor=(AI_F[ai] if AI_F[ai] < 1 else None))
+        emit_leaf(lcode, owner, name, s, e, sc, ai, deliv, ms, raw=eff, factor=AI_F[ai])
     ss = [l[3] for l in leaves]; ee = [l[4] for l in leaves]
     ws.cell(g_row, 5, "/".join(sorted({l[1] for l in leaves})))
     ws.cell(g_row, 6, min(ss)); ws.cell(g_row, 7, max(ee))
@@ -670,6 +673,24 @@ print("=== V2.0 直估重排结果 ===")
 for k in ("M1", "M2", "M3", "M4", "M5", "M6", "M7"):
     print(f"{k}: {MS_DATES[k]}")
 print("每人排期人天:", {k: round(v, 2) for k, v in sorted(per_person.items())})
+_raw_tot = {}
+for _t in TASKS.values():
+    if _t["eff"] > 0 and _t["owner"] != "Mark":
+        _raw_tot[_t["owner"]] = round(_raw_tot.get(_t["owner"], 0) + _t["eff"], 2)
+print("每人直估人天(含环节):", _raw_tot, "| 合计:", round(sum(_raw_tot.values()), 2))
+_groups = {"拆解内-功能(DevB名下)": 0.0, "拆解内-非功能N组": 0.0, "拆解外-环节": 0.0}
+for _t in TASKS.values():
+    if _t["owner"] != "DevB" or _t["eff"] <= 0:
+        continue
+    tid = _t["id"]
+    if re.match(r"^F\d", tid):
+        _groups["拆解内-功能(DevB名下)"] += _t["eff"]
+    elif tid.startswith(("n1", "n2", "n3", "n4", "n5")) or tid == "p6":
+        _groups["拆解内-非功能N组"] += _t["eff"]
+    else:
+        _groups["拆解外-环节"] += _t["eff"]
+print("DevB 90.75构成:", {k: round(v, 2) for k, v in _groups.items()})
+print("桥: 拆解估算70.5 - 移Wade11.75 + 环节31.5 = 90.25~90.75 区间核对")
 print("总计:", round(sum(per_person.values()), 2))
 print("末行:", LAST_ROW)
 for w in ("Wade", "DevB", "Mandy"):
