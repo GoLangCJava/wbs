@@ -151,7 +151,7 @@ for r in range(3, wst.max_row + 1):
         MOD_OF[str(fid)] = str(wst.cell(row=r, column=2).value)
 assert set(FUNC_NAME) == {f[0] for f in B}, "功能清单与覆盖页不一致"
 
-# ---------- 样式 ----------
+# ---------- 渲染（合并单元格版式）：功能名/功能小计纵向合并，不占汇总行 ----------
 THIN = Side(style="thin", color="BFBFBF")
 BORDER = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
 F_TITLE = Font(bold=True, size=14, color="FFFFFF")
@@ -159,7 +159,6 @@ F_HDR = Font(bold=True, color="FFFFFF")
 F_L1 = Font(bold=True)
 FILL_NAVY = PatternFill("solid", fgColor="305496")
 FILL_L1 = PatternFill("solid", fgColor="D9E1F2")
-FILL_G = PatternFill("solid", fgColor="F2F2F2")
 CENTER = Alignment(horizontal="center", vertical="center")
 
 MOD_FILL = {}
@@ -174,12 +173,12 @@ if "功能拆解估算" in wb.sheetnames:
     del wb["功能拆解估算"]
 wsn = wb.create_sheet("功能拆解估算", wb.sheetnames.index("功能视角分解") + 1)
 wsn.sheet_properties.tabColor = "8FA9DB"
-wsn.merge_cells("A1:I1")
-wsn["A1"] = "功能拆解估算（子任务级直估）：每个功能下钻到子功能/工作包，按角色直估人天 — 独立估算，不锚定排期185人天"
+wsn.merge_cells("A1:K1")
+wsn["A1"] = "功能拆解估算（子任务级直估）：功能信息纵向合并对应多个子任务 — 独立估算，不锚定排期185人天"
 wsn["A1"].font = F_TITLE; wsn["A1"].fill = FILL_NAVY; wsn["A1"].alignment = CENTER
 wsn.row_dimensions[1].height = 26
-GH = ["子任务编号", "子任务/工作包", "工作内容要点", "BA人天", "开发A·Wade", "开发B·DevB", "测试人天", "SLC文档", "小计"]
-GW = [11, 26, 44, 8, 10, 10, 8, 8, 8]
+GH = ["子任务编号", "功能名称", "子任务/工作包", "工作内容要点", "BA人天", "开发A·Wade", "开发B·DevB", "测试人天", "SLC文档", "小计", "功能小计"]
+GW = [11, 20, 24, 42, 8, 10, 10, 8, 8, 8, 9]
 for i, (h, w) in enumerate(zip(GH, GW), 1):
     wsn.column_dimensions[get_column_letter(i)].width = w
     c = wsn.cell(row=2, column=i, value=h); c.font = F_HDR; c.fill = FILL_NAVY; c.alignment = CENTER; c.border = BORDER
@@ -187,40 +186,43 @@ for i, (h, w) in enumerate(zip(GH, GW), 1):
 r = 3
 gt = [0.0] * 5
 for fcode, subs in B:
-    fs = [round(sum(s[i] for s in subs), 2) for i in range(2, 7)]
-    # 功能汇总行（含模块底色）
-    wsn.cell(row=r, column=1, value=fcode)
-    wsn.merge_cells(start_row=r, start_column=2, end_row=r, end_column=3)
-    wsn.cell(row=r, column=2, value=FUNC_NAME[fcode] + "（" + MOD_OF[fcode] + "）· 共" + str(len(subs)) + "个子任务")
-    for i, v in enumerate(fs):
-        c = wsn.cell(row=r, column=4 + i, value=v); c.number_format = "0.##"
-    wsn.cell(row=r, column=9, value=round(sum(fs), 2)).number_format = "0.##"
-    for i in range(1, 10):
-        c = wsn.cell(row=r, column=i); c.border = BORDER; c.fill = PatternFill("solid", fgColor=MOD_FILL[fcode[:3]]); c.font = F_L1
-        c.alignment = CENTER if i != 2 else Alignment(horizontal="left", vertical="center")
-    r += 1
-    # 子任务行
+    fill = PatternFill("solid", fgColor=MOD_FILL[fcode[:3]])
+    r0 = r
     for n, (name, desc, ba, wa, db, te, sl) in enumerate(subs, 1):
-        vals = [f"{fcode}-{n}", name, desc, ba or None, wa or None, db or None, te or None, sl or None,
+        vals = [f"{fcode}-{n}", None, name, desc, ba or None, wa or None, db or None, te or None, sl or None,
                 round(ba + wa + db + te + sl, 2)]
         for i, v in enumerate(vals, 1):
             c = wsn.cell(row=r, column=i, value=v); c.border = BORDER
-            c.alignment = CENTER if i in (1, 4, 5, 6, 7, 8, 9) else Alignment(wrap_text=True, vertical="center")
-            if i in (4, 5, 6, 7, 8, 9): c.number_format = "0.##"
-        for i, v in enumerate((ba, wa, db, te, sl)):
-            gt[i] += v
+            c.alignment = CENTER if i in (1, 5, 6, 7, 8, 9, 10) else Alignment(wrap_text=True, vertical="center")
+            if i in (5, 6, 7, 8, 9, 10): c.number_format = "0.##"
         wsn.row_dimensions[r].height = 26
         r += 1
+    r1 = r - 1
+    # 功能名称（B列）与功能小计（K列）纵向合并
+    wsn.merge_cells(start_row=r0, start_column=2, end_row=r1, end_column=2)
+    cB = wsn.cell(row=r0, column=2)
+    cB.value = FUNC_NAME[fcode]
+    cB.font = F_L1; cB.fill = fill
+    cB.alignment = Alignment(wrap_text=True, vertical="center", horizontal="left")
+    wsn.merge_cells(start_row=r0, start_column=11, end_row=r1, end_column=11)
+    fs = round(sum(s[i] for s in subs for i in range(2, 7)), 2)
+    cK = wsn.cell(row=r0, column=11, value=fs)
+    cK.font = F_L1; cK.fill = fill; cK.alignment = CENTER; cK.number_format = "0.##"
+    for rr in range(r0, r1 + 1):  # 合并区域补边框
+        wsn.cell(row=rr, column=2).border = BORDER
+        wsn.cell(row=rr, column=11).border = BORDER
+    for s in subs:
+        for i, v in enumerate(s[2:7]):
+            gt[i] += v
 # 总计行
-labels = ["总计", "26项功能 × " + str(sum(len(s) for _, s in B)) + "个子任务", "独立直估（不含项目初始化/架构设计/集成/UAT/上线/PM等公共工作）",
-          gt[0], gt[1], gt[2], gt[3], gt[4], round(sum(gt), 2)]
+labels = ["", "总计", "26项功能 × " + str(sum(len(s) for _, s in B)) + "个子任务",
+          "独立直估（不含项目初始化/架构设计/集成/UAT/上线/PM等公共工作）",
+          gt[0], gt[1], gt[2], gt[3], gt[4], round(sum(gt), 2), ""]
 for i, v in enumerate(labels, 1):
     c = wsn.cell(row=r, column=i, value=v); c.border = BORDER; c.fill = FILL_L1; c.font = F_L1
-    c.alignment = CENTER if i != 3 else Alignment(horizontal="left", vertical="center")
-    if i in (4, 5, 6, 7, 8, 9): c.number_format = "0.##"
-total_row = r
-wsn.freeze_panes = "A3"
-wsn.auto_filter.ref = f"A2:I{r}"
+    c.alignment = CENTER if i not in (3, 4) else Alignment(horizontal="left", vertical="center")
+    if i in (5, 6, 7, 8, 9, 10): c.number_format = "0.##"
+wsn.freeze_panes = "C3"
 
 # ---------- 与计划口径对照 ----------
 wsg = wb["功能视角分解"]
@@ -232,9 +234,6 @@ for rr in range(3, wsg.max_row + 1):
         plan_feat += v
     elif a.startswith("G") and isinstance(v, (int, float)):
         plan_common += v
-    elif a == "合计":
-        pm_v = wsg.cell(row=rr, column=16).value  # PM 15
-plan_total = 185
 grand = round(sum(gt), 2)
 note = ("对照说明（两个口径）：① 本表为子任务级独立直估，合计 %s 人天（BA %s / Wade %s / DevB %s / 测试 %s / SLC %s），"
         "其中「存储落地Iceberg/UC」「元数据驱动」「RBAC」等设计实现类子任务与计划公共行（架构与非功能设计等）存在重叠，且未假设跨功能复用（同一界面/中间件多处计价）。"
@@ -245,17 +244,34 @@ note = ("对照说明（两个口径）：① 本表为子任务级独立直估�
 c = wsn.cell(row=r + 2, column=1, value=note)
 c.font = Font(italic=True, size=9, color="C00000")
 c.alignment = Alignment(wrap_text=True, vertical="top")
-wsn.merge_cells(start_row=r + 2, start_column=1, end_row=r + 2, end_column=9)
+wsn.merge_cells(start_row=r + 2, start_column=1, end_row=r + 2, end_column=11)
 wsn.row_dimensions[r + 2].height = 52
 
-# 使用说明追加
+# ---------- 使用说明：幂等更新 + 清理历史重复行 ----------
 ws0 = wb["使用说明"]
-last = ws0.max_row + 1
-ws0.cell(row=last, column=1, value="功能拆解估算").font = Font(bold=True)
-v = ws0.cell(row=last, column=2, value="子任务级直估：26项功能下钻到%d个子任务/工作包（如F01-01拆为原系统录入/DB连接/表勾选/保留期配置/Iceberg·UC存储落地/导入作业/监控），按BA/开发A/开发B/测试/SLC文档独立估人天，不锚定185人天；底部附与计划口径的对照与差异说明" % sum(len(s) for _, s in B))
-v.alignment = Alignment(wrap_text=True, vertical="top")
-ws0.row_dimensions[last].height = 30
+desc = ("子任务级直估：26项功能下钻到%d个子任务/工作包（如F01-01拆为原系统录入/DB连接/表勾选/保留期配置/Iceberg·UC存储落地/导入作业/监控），"
+        "按BA/开发A/开发B/测试/SLC文档独立估人天，不锚定185人天；功能名称与功能小计为纵向合并单元格；底部附与计划口径的对照与差异说明" % sum(len(s) for _, s in B))
+seen_feat, seen_break = 0, 0
+for rr in range(1, ws0.max_row + 1):
+    a = ws0.cell(row=rr, column=1).value
+    if a == "功能拆解估算":
+        if seen_break == 0:
+            ws0.cell(row=rr, column=2, value=desc).alignment = Alignment(wrap_text=True, vertical="top")
+            ws0.row_dimensions[rr].height = 30
+        else:
+            ws0.cell(row=rr, column=1).value = None; ws0.cell(row=rr, column=2).value = None
+        seen_break += 1
+    elif a == "功能视角分解":
+        seen_feat += 1
+        if seen_feat > 1:
+            ws0.cell(row=rr, column=1).value = None; ws0.cell(row=rr, column=2).value = None
+if seen_break == 0:
+    last = ws0.max_row + 1
+    ws0.cell(row=last, column=1, value="功能拆解估算").font = Font(bold=True)
+    v = ws0.cell(row=last, column=2, value=desc)
+    v.alignment = Alignment(wrap_text=True, vertical="top")
+    ws0.row_dimensions[last].height = 30
 
 wb.save(PATH)
-print(f"完成：功能拆解估算 {len(B)}功能 / {sum(len(s) for _, s in B)}子任务 | 直估合计 {grand} 人天（BA {gt[0]} / Wade {gt[1]} / DevB {gt[2]} / 测试 {gt[3]} / SLC {gt[4]}）")
-print(f"对照：计划功能分摊 {round(plan_feat,2)} + 公共 {round(plan_common,2)} = 185")
+print(f"完成：功能拆解估算（合并版式）{len(B)}功能 / {sum(len(s) for _, s in B)}子任务 | 直估合计 {grand} 人天")
+print(f"使用说明去重：功能视角分解保留1行（清理{seen_feat-1}行）、功能拆解估算保留1行（清理{seen_break-1}行）")
