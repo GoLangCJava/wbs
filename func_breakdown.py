@@ -285,23 +285,51 @@ for rr in range(3, wsg.max_row + 1):
     elif a.startswith("G") and isinstance(v, (int, float)):
         plan_common += v
 grand = round(sum(gt), 2)
-note = ("对照说明（三个口径）：① 功能直估 %s 人天（BA %s / Wade %s / DevB %s / 测试 %s / SLC %s）——本版已按配置界面/动态表单复杂度上调前端工作量；"
-        "② 非功能与工程支撑直估 %s 人天（N1初始化与基座/N2 ESLint·SonarLint·SAST·依赖治理/N3性能·鉴权掩码·可观测·容量/N4部署运维）——此前缺失，现已补齐；"
-        "③ 已识别原生组件能力（按配置+验证计价，不再计自研开发，子任务标注【原生】/【中间件】）：ADLS SSE/CMK加密、ADLS GRS异地冗余、Key Vault密钥管理、SQL DB PITR备份与Monitor告警、Entra ID+MSAL单点登录、App Insights/Log Analytics可观测性、Unity Catalog授权、Azure DevOps扫描门禁；"
-        "④ 合计 %s 人天 vs 排期计划185人天：Wade %s；DevB %s仍超计划60约 %s 人天（数据/ETL侧，靠AI生成ETL/SQL提效吸收）；总缺口约 %s 人天（%.0f%%），建议以本表为规模基线纳入风险跟踪，必要时启用备用赶工日（9/20、10/10）。"
+note = ("对照说明（四个口径）：① 功能直估 %s 人天（BA %s / Wade %s / DevB %s / 测试 %s / SLC %s）——已按配置界面/动态表单复杂度上调前端工作量；"
+        "② 非功能与工程支撑直估 %s 人天（N1初始化与基座/N2 ESLint·SonarLint·SAST·依赖治理/N3性能·鉴权掩码·可观测·容量/N4部署运维）；"
+        "③ 已识别原生组件能力（按配置+验证计价，子任务标注【原生】/【中间件】）：ADLS SSE/CMK加密、ADLS GRS异地冗余、Key Vault密钥管理、SQL DB PITR备份与Monitor告警、Entra ID+MSAL单点登录、App Insights/Log Analytics可观测性、Unity Catalog授权、Azure DevOps扫描门禁；"
+        "④ 合计 %s 人天 vs 计划185：Wade %s（计划60，有余量）；DevB %s（超计划60约%s）；Mandy三职 %s（BA %s + 测试 %s + SLC %s，超计划50约%s）——角色级差异的吸收路径见下方「AI Native提效折算对照」。"
         % (round(sum(feat_tot), 2), feat_tot[0], feat_tot[1], feat_tot[2], feat_tot[3], feat_tot[4],
-           round(sum(nfr_tot), 2), grand, gt[1], gt[2], round(gt[2] - 60, 2), round(grand - 185, 2), (grand - 185) / grand * 100))
+           round(sum(nfr_tot), 2), grand, gt[1], gt[2], round(gt[2] - 60, 2),
+           round(gt[0] + gt[3] + gt[4], 2), gt[0], gt[3], gt[4], round(gt[0] + gt[3] + gt[4] - 50, 2)))
 c = wsn.cell(row=r + 2, column=1, value=note)
 c.font = Font(italic=True, size=9, color="C00000")
 c.alignment = Alignment(wrap_text=True, vertical="top")
 wsn.merge_cells(start_row=r + 2, start_column=1, end_row=r + 2, end_column=12)
 wsn.row_dimensions[r + 2].height = 56
 
+# AI Native提效折算对照（直估→计划的吸收路径）
+mandy_g = round(gt[0] + gt[3] + gt[4], 2)
+mandy_adj = round(gt[0] + gt[3] * 0.65 + gt[4] * 0.6, 2)
+devb_adj = round(gt[2] * 0.85, 2)
+_lines = [
+    ("AI Native提效折算对照（直估→计划185的吸收路径）：", True),
+    ("· Mandy：直估 %s（BA %s + 测试 %s + SLC %s）→ 测试×0.65（AI生成用例+人工审校执行）、SLC×0.6（AI反生成+人工润色）、BA不折减 → ≈%s ≈ 计划50 ✓" % (mandy_g, gt[0], gt[3], gt[4], mandy_adj), False),
+    ("· Wade：直估 %s → 无需折减 → 计划60，余 %s 缓冲 ✓" % (gt[1], round(60 - gt[1], 2)), False),
+    ("· DevB：直估 %s → ETL/SQL/作业配置AI生成×0.85 → ≈%s ≈ 计划60 ✓（最大风险假设：AI生成ETL需有效落地，纳入风险跟踪）" % (gt[2], devb_adj), False),
+    ("· 合计：直估 %s → 折算 ≈%s + PM 15 = %s ≤ 185，余 ≈%s 人天缓冲；若提效不达标，启用备用赶工日（9/20、10/10）" % (grand, round(gt[1] + mandy_adj + devb_adj, 2), round(gt[1] + mandy_adj + devb_adj + 15, 2), round(185 - gt[1] - mandy_adj - devb_adj - 15, 2)), False),
+]
+rr2 = r + 4
+for text, bold in _lines:
+    c = wsn.cell(row=rr2, column=1, value=text)
+    c.font = Font(bold=bold, size=9, color="1F4E79")
+    c.alignment = Alignment(wrap_text=True, vertical="center")
+    wsn.merge_cells(start_row=rr2, start_column=1, end_row=rr2, end_column=12)
+    wsn.row_dimensions[rr2].height = 16
+    rr2 += 1
+
 # ---------- 使用说明（幂等） ----------
 ws0 = wb["使用说明"]
 desc = ("子任务级直估：模块→功能→子任务三层结构（模块列与功能列均为纵向合并单元格），26项功能×75子任务 + 非功能与工程支撑×%d子任务"
         "（N1框架初始化与基座/N2 ESLint·SonarLint·SAST代码质量治理/N3性能·鉴权·可观测·容量/N4部署运维），"
         "按BA/开发A/开发B/测试/SLC文档独立估人天；底部附与计划口径对照" % sum(len(s[2]) for s in N))
+fv_seen = 0
+for rr in range(1, ws0.max_row + 1):
+    if ws0.cell(row=rr, column=1).value == "功能视角分解":
+        fv_seen += 1
+        if fv_seen > 1:
+            ws0.cell(row=rr, column=1).value = None
+            ws0.cell(row=rr, column=2).value = None
 seen = 0
 for rr in range(1, ws0.max_row + 1):
     if ws0.cell(row=rr, column=1).value == "功能拆解估算":

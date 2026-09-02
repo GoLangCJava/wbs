@@ -249,14 +249,15 @@ note = wsg.cell(row=rg + 1, column=1,
           % (tot_cols["BA"], tot_cols["测试"], tot_cols["文档"]))
 note.font = Font(italic=True, size=9, color="C00000")
 
-# 使用说明追加一行
+# 使用说明追加一行（幂等：已有则不重复添加）
 ws0 = wb["使用说明"]
-last = ws0.max_row + 1
-k = ws0.cell(row=last, column=1, value="功能视角分解")
-k.font = Font(bold=True)
-v = ws0.cell(row=last, column=2, value="按功能维度查看：26项功能×（BA/开发A/开发B/测试/文档）五类角色各自的工作内容与人天，另有9类公共支撑行（初始化/架构/集成/专项/上线/管理）；底部与185人天自动对账，可与按开发顺序的「WBS分解」页对照使用")
-v.alignment = Alignment(wrap_text=True, vertical="top")
-ws0.row_dimensions[last].height = 30
+if not any(ws0.cell(row=rr, column=1).value == "功能视角分解" for rr in range(1, ws0.max_row + 1)):
+    last = ws0.max_row + 1
+    k = ws0.cell(row=last, column=1, value="功能视角分解")
+    k.font = Font(bold=True)
+    v = ws0.cell(row=last, column=2, value="按功能维度查看：26项功能×（BA/开发A/开发B/测试/文档）五类角色各自的工作内容与人天，另有9类公共支撑行（初始化/架构/集成/专项/上线/管理）；底部与185人天自动对账，可与按开发顺序的「WBS分解」页对照使用")
+    v.alignment = Alignment(wrap_text=True, vertical="top")
+    ws0.row_dimensions[last].height = 30
 
 wb.save(PATH)
 print(f"完成：功能视角分解 26功能行+9公共行 | Mandy {mandy_tot}（BA {tot_cols['BA']}/测试 {tot_cols['测试']}/文档 {tot_cols['文档']}）Wade {tot_cols['Wade']} DevB {tot_cols['DevB']} PM {tot_cols['PM']} = {grand}人天 ✓")
