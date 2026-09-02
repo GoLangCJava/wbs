@@ -77,11 +77,6 @@ B = [
  ("备份作业与副本创建", "元数据库PITR、湖快照、附件副本", 0, 0, 1.5, .5, .25),
  ("备份监控与恢复操作", "备份状态监控、恢复流程", 0, .5, .5, .5, .25),
 ]),
-("F04-04", [
- ("灾备方案与RTO/RPO定义", "灾备架构、恢复目标定义", .5, 0, .5, .25, .25),
- ("异地副本同步", "存储异地冗余/复制配置", 0, 0, 1.5, .5, .25),
- ("恢复切换演练", "演练脚本、切换/回切流程与报告", 0, 0, 1, .75, .25),
-]),
 ("F05-01", [
  ("检索配置模型", "可检索字段、分词策略、OCR文本索引策略", .5, .5, 1, .25, .25),
  ("检索页动态表单", "元数据驱动渲染、关键词与组合查询", 0, 2, .25, .5, .25),
@@ -179,7 +174,8 @@ for r in range(3, wst.max_row + 1):
     if fid and str(fid).startswith("F"):
         FUNC_NAME[str(fid)] = str(wst.cell(row=r, column=5).value)
         MOD_OF[str(fid)] = str(wst.cell(row=r, column=2).value)
-assert set(FUNC_NAME) == {f[0] for f in B}, "功能清单与覆盖页不一致"
+# F04-04 异地灾备：Azure Blob 原生异地冗余（GRS/RA-GRS）自带，仅需配置与恢复演练（见WBS 5.2.8），不列入开发直估
+assert set(FUNC_NAME) - {"F04-04"} == {f[0] for f in B} and "F04-04" in FUNC_NAME, "功能清单与覆盖页不一致"
 
 # ---------- 渲染 ----------
 THIN = Side(style="thin", color="BFBFBF")
@@ -205,7 +201,8 @@ if "功能拆解估算" in wb.sheetnames:
 wsn = wb.create_sheet("功能拆解估算", wb.sheetnames.index("功能视角分解") + 1)
 wsn.sheet_properties.tabColor = "8FA9DB"
 wsn.merge_cells("A1:L1")
-wsn["A1"] = "功能拆解估算（子任务级直估）：模块→功能→子任务三层结构，26项功能×75子任务 + 非功能与工程支撑×18子任务 — 独立估算，不锚定排期185人天"
+wsn["A1"] = (f"功能拆解估算（子任务级直估）：模块→功能→子任务三层结构，{len(B)}项功能×{sum(len(s[1]) for s in B)}子任务"
+             f" + 非功能与工程支撑×{sum(len(s[2]) for s in N)}子任务（F04-04异地灾备=Azure Blob原生能力，不计开发）— 独立估算，不锚定排期185人天")
 wsn["A1"].font = F_TITLE; wsn["A1"].fill = FILL_NAVY; wsn["A1"].alignment = CENTER
 wsn.row_dimensions[1].height = 26
 GH = ["子任务编号", "模块", "功能/组名称", "子任务/工作包", "工作内容要点", "BA人天", "开发A·Wade", "开发B·DevB", "测试人天", "SLC文档", "小计", "功能/组小计"]
@@ -268,7 +265,7 @@ while i < len(sec_rows):
     cM.alignment = Alignment(wrap_text=True, vertical="center", horizontal="center")
     i = j + 1
 
-labels = ["", "总计", "", f"26项功能×75子任务 + 非功能工程×{sum(len(s[2]) for s in N)}子任务",
+labels = ["", "总计", "", f"{len(B)}项功能×{sum(len(s[1]) for s in B)}子任务 + 非功能工程×{sum(len(s[2]) for s in N)}子任务（F04-04=Azure原生能力，不计开发）",
           "独立直估（另含少量需求/PM等工作未列入本表）",
           gt[0], gt[1], gt[2], gt[3], gt[4], round(sum(gt), 2), ""]
 for i, v in enumerate(labels, 1):
@@ -324,7 +321,7 @@ if seen == 0:
     ws0.row_dimensions[last].height = 30
 
 wb.save(PATH)
-print(f"完成：{len(B)}功能×75子任务 + 非功能{len(N)}组×{sum(len(s[2]) for s in N)}子任务（共{n_subs}）")
+print(f"完成：{len(B)}功能×{sum(len(s[1]) for s in B)}子任务 + 非功能{len(N)}组×{sum(len(s[2]) for s in N)}子任务（共{n_subs}）")
 print(f"功能直估: {round(sum(feat_tot),2)}（BA {feat_tot[0]} / Wade {feat_tot[1]} / DevB {feat_tot[2]} / 测试 {feat_tot[3]} / SLC {feat_tot[4]}）")
 print(f"非功能直估: {round(sum(nfr_tot),2)}（BA {nfr_tot[0]} / Wade {nfr_tot[1]} / DevB {nfr_tot[2]} / 测试 {nfr_tot[3]} / SLC {nfr_tot[4]}）")
 print(f"合计: {grand}（BA {gt[0]} / Wade {gt[1]} / DevB {gt[2]} / 测试 {gt[3]} / SLC {gt[4]}）vs 计划185")
