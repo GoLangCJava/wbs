@@ -204,61 +204,78 @@ if "功能拆解估算" in wb.sheetnames:
     del wb["功能拆解估算"]
 wsn = wb.create_sheet("功能拆解估算", wb.sheetnames.index("功能视角分解") + 1)
 wsn.sheet_properties.tabColor = "8FA9DB"
-wsn.merge_cells("A1:K1")
-wsn["A1"] = "功能拆解估算（子任务级直估）：26项功能×75子任务 + 非功能与工程支撑×18子任务 — 独立估算，不锚定排期185人天"
+wsn.merge_cells("A1:L1")
+wsn["A1"] = "功能拆解估算（子任务级直估）：模块→功能→子任务三层结构，26项功能×75子任务 + 非功能与工程支撑×18子任务 — 独立估算，不锚定排期185人天"
 wsn["A1"].font = F_TITLE; wsn["A1"].fill = FILL_NAVY; wsn["A1"].alignment = CENTER
 wsn.row_dimensions[1].height = 26
-GH = ["子任务编号", "功能/组名称", "子任务/工作包", "工作内容要点", "BA人天", "开发A·Wade", "开发B·DevB", "测试人天", "SLC文档", "小计", "功能/组小计"]
-GW = [11, 20, 24, 42, 8, 10, 10, 8, 8, 8, 9]
+GH = ["子任务编号", "模块", "功能/组名称", "子任务/工作包", "工作内容要点", "BA人天", "开发A·Wade", "开发B·DevB", "测试人天", "SLC文档", "小计", "功能/组小计"]
+GW = [11, 17, 19, 22, 40, 8, 10, 10, 8, 8, 8, 9]
 for i, (h, w) in enumerate(zip(GH, GW), 1):
     wsn.column_dimensions[get_column_letter(i)].width = w
     c = wsn.cell(row=2, column=i, value=h); c.font = F_HDR; c.fill = FILL_NAVY; c.alignment = CENTER; c.border = BORDER
 
-SECTIONS = [(fc, FUNC_NAME[fc] + "（" + MOD_OF[fc] + "）", subs, PatternFill("solid", fgColor=MOD_FILL[fc[:3]])) for fc, subs in B] \
-         + [(gc, gn, subs, FILL_NFR) for gc, gn, subs in N]
-n_subs = sum(len(s[2]) for s in SECTIONS)
+SECTIONS = [(fc, MOD_OF[fc], FUNC_NAME[fc], subs, PatternFill("solid", fgColor=MOD_FILL[fc[:3]])) for fc, subs in B] \
+         + [(gc, "非功能与工程支撑", gn.replace("【非功能】", ""), subs, FILL_NFR) for gc, gn, subs in N]
+n_subs = sum(len(s[3]) for s in SECTIONS)
 
 r = 3
 gt = [0.0] * 5
 feat_tot = [0.0] * 5
 nfr_tot = [0.0] * 5
-for gcode, gname, subs, fill in SECTIONS:
+sec_rows = []  # (模块名, r0, r1, fill)
+for gcode, mname, gname, subs, fill in SECTIONS:
     is_nfr = gcode.startswith("N")
     r0 = r
     for n, (name, desc, ba, wa, db, te, sl) in enumerate(subs, 1):
-        vals = [f"{gcode}-{n}", None, name, desc, ba or None, wa or None, db or None, te or None, sl or None,
+        vals = [f"{gcode}-{n}", None, None, name, desc, ba or None, wa or None, db or None, te or None, sl or None,
                 round(ba + wa + db + te + sl, 2)]
         for i, v in enumerate(vals, 1):
             c = wsn.cell(row=r, column=i, value=v); c.border = BORDER
-            c.alignment = CENTER if i in (1, 5, 6, 7, 8, 9, 10) else Alignment(wrap_text=True, vertical="center")
-            if i in (5, 6, 7, 8, 9, 10): c.number_format = "0.##"
+            c.alignment = CENTER if i in (1, 6, 7, 8, 9, 10, 11) else Alignment(wrap_text=True, vertical="center")
+            if i in (6, 7, 8, 9, 10, 11): c.number_format = "0.##"
         wsn.row_dimensions[r].height = 26
         r += 1
     r1 = r - 1
-    wsn.merge_cells(start_row=r0, start_column=2, end_row=r1, end_column=2)
-    cB = wsn.cell(row=r0, column=2)
+    # 功能/组名称（C列）与功能小计（L列）纵向合并
+    wsn.merge_cells(start_row=r0, start_column=3, end_row=r1, end_column=3)
+    cB = wsn.cell(row=r0, column=3)
     cB.value = gname
     cB.font = F_L1; cB.fill = fill
     cB.alignment = Alignment(wrap_text=True, vertical="center", horizontal="left")
-    wsn.merge_cells(start_row=r0, start_column=11, end_row=r1, end_column=11)
+    wsn.merge_cells(start_row=r0, start_column=12, end_row=r1, end_column=12)
     gs = [round(sum(s[i] for s in subs), 2) for i in range(2, 7)]
-    cK = wsn.cell(row=r0, column=11, value=round(sum(gs), 2))
+    cK = wsn.cell(row=r0, column=12, value=round(sum(gs), 2))
     cK.font = F_L1; cK.fill = fill; cK.alignment = CENTER; cK.number_format = "0.##"
     for rr in range(r0, r1 + 1):
-        wsn.cell(row=rr, column=2).border = BORDER
-        wsn.cell(row=rr, column=11).border = BORDER
+        for col in (2, 3, 12):
+            wsn.cell(row=rr, column=col).border = BORDER
+    sec_rows.append((mname, r0, r1, fill))
     for i in range(5):
         gt[i] += gs[i]
         (nfr_tot if is_nfr else feat_tot)[i] += gs[i]
 
-labels = ["", "总计", f"26项功能×75子任务 + 非功能工程×{sum(len(s[2]) for s in N)}子任务",
+# 模块列（B列）：按模块跨功能合并
+i = 0
+while i < len(sec_rows):
+    j = i
+    while j + 1 < len(sec_rows) and sec_rows[j + 1][0] == sec_rows[i][0]:
+        j += 1
+    mname, r0, r1, fill = sec_rows[i][0], sec_rows[i][1], sec_rows[j][2], sec_rows[i][3]
+    wsn.merge_cells(start_row=r0, start_column=2, end_row=r1, end_column=2)
+    cM = wsn.cell(row=r0, column=2)
+    cM.value = mname
+    cM.font = F_L1; cM.fill = fill
+    cM.alignment = Alignment(wrap_text=True, vertical="center", horizontal="center")
+    i = j + 1
+
+labels = ["", "总计", "", f"26项功能×75子任务 + 非功能工程×{sum(len(s[2]) for s in N)}子任务",
           "独立直估（另含少量需求/PM等工作未列入本表）",
           gt[0], gt[1], gt[2], gt[3], gt[4], round(sum(gt), 2), ""]
 for i, v in enumerate(labels, 1):
     c = wsn.cell(row=r, column=i, value=v); c.border = BORDER; c.fill = FILL_L1; c.font = F_L1
-    c.alignment = CENTER if i not in (3, 4) else Alignment(horizontal="left", vertical="center")
-    if i in (5, 6, 7, 8, 9, 10): c.number_format = "0.##"
-wsn.freeze_panes = "C3"
+    c.alignment = CENTER if i not in (4, 5) else Alignment(horizontal="left", vertical="center")
+    if i in (6, 7, 8, 9, 10, 11): c.number_format = "0.##"
+wsn.freeze_panes = "D3"
 
 # ---------- 对照说明 ----------
 wsg = wb["功能视角分解"]
@@ -280,13 +297,14 @@ note = ("对照说明（三个口径）：① 功能直估 %s 人天（BA %s / W
 c = wsn.cell(row=r + 2, column=1, value=note)
 c.font = Font(italic=True, size=9, color="C00000")
 c.alignment = Alignment(wrap_text=True, vertical="top")
-wsn.merge_cells(start_row=r + 2, start_column=1, end_row=r + 2, end_column=11)
+wsn.merge_cells(start_row=r + 2, start_column=1, end_row=r + 2, end_column=12)
 wsn.row_dimensions[r + 2].height = 56
 
 # ---------- 使用说明（幂等） ----------
 ws0 = wb["使用说明"]
-desc = ("子任务级直估：26项功能×75子任务 + 非功能与工程支撑×%d子任务（N1框架初始化与基座/N2 ESLint·SonarLint·SAST代码质量治理/N3性能·鉴权·可观测·容量/N4部署运维），"
-        "按BA/开发A/开发B/测试/SLC文档独立估人天；功能/组名称与小计为纵向合并单元格；底部附与计划口径对照" % sum(len(s[2]) for s in N))
+desc = ("子任务级直估：模块→功能→子任务三层结构（模块列与功能列均为纵向合并单元格），26项功能×75子任务 + 非功能与工程支撑×%d子任务"
+        "（N1框架初始化与基座/N2 ESLint·SonarLint·SAST代码质量治理/N3性能·鉴权·可观测·容量/N4部署运维），"
+        "按BA/开发A/开发B/测试/SLC文档独立估人天；底部附与计划口径对照" % sum(len(s[2]) for s in N))
 seen = 0
 for rr in range(1, ws0.max_row + 1):
     if ws0.cell(row=rr, column=1).value == "功能拆解估算":
