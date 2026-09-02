@@ -54,15 +54,19 @@ def next_wd(d):
         i = WDI.get(d)
     return d
 
-# ---------------- 任务模型 ----------------
+# ---------------- 任务模型（V2.1：AI Native执行折算，系数与「AI参与方式」一一对应） ----------------
+AI_F = {"AI生成+人工审核": 0.65, "AI生成用例+人工审校执行": 0.60, "AI辅助": 0.75, "自动化流水线": 0.90, "人工主导": 1.00}
+DEADLINE = __import__("datetime").date(2026, 12, 31)
 TASKS = {}   # id -> dict
 ORDER = {"Wade": [], "DevB": [], "Mandy": [], "Mark": []}
 
 def T(tid, owner, name, eff, phase, group, ai="AI生成+人工审核", deliv=None, deps=(), remark=None):
     assert tid not in TASKS
-    TASKS[tid] = dict(id=tid, owner=owner, name=name, eff=float(eff), phase=phase, group=group,
-                      ai=ai, deliv=deliv, deps=list(deps), remark=remark, remain=float(eff),
-                      start=None, end=None, days=set(), spread=False, ms=False)
+    sched = round(float(eff) * AI_F[ai], 2)
+    TASKS[tid] = dict(id=tid, owner=owner, name=name, eff=float(eff), sched=sched, phase=phase, group=group,
+                      ai=ai, deliv=deliv, deps=list(deps), remark=remark, remain=float(sched),
+                      start=None, end=None, days=set(), spread=False, ms=False,
+                      factor=(AI_F[ai] if AI_F[ai] < 1 else None))
     ORDER[owner].append(tid)
     return TASKS[tid]
 
@@ -84,12 +88,12 @@ T("a2", "Wade", "平台资源验收（ADLS/SQL DB/Databricks/Key Vault连通性�
 T("a3", "Wade", "总体架构终稿+模块接口定义（按功能模块划分A/B边界）", 1, 3, "3.1 架构与接口定稿", "AI辅助", "架构设计文档V1.0、接口定义")
 T("a4", "Wade", "外部架构评审#1（P0末，2h）+意见落实", 0.5, 3, "3.1 架构与接口定稿", "人工主导")
 # 3.2 数据与后端设计（DevB，沿用原WBS 3.2段，去掉已并入N1的后端初始化）
-T("d01", "DevB", "目标数据模型预设计（RAW→CURATED→LAKE→SERVE四层表结构草案）", 2, 3, "3.2 数据与后端设计", "AI辅助", deps=["q2"])
+T("d01", "DevB", "目标数据模型预设计（RAW→CURATED→LAKE→SERVE四层表结构草案，与访谈澄清并行、按Scope源文件预设计）", 2, 3, "3.2 数据与后端设计", "AI辅助")
 T("d02", "DevB", "外部依赖前置：平台资源申请+CC只读账号申请", 1, 3, "3.2 数据与后端设计", "人工主导", deliv="申请单+回执")
 T("d03", "DevB", "元数据库建库脚本（35表DDL草案）", 2, 3, "3.2 数据与后端设计")
-T("d04", "DevB", "湖仓分层设计细化（分区sys_id+日期/Parquet+ZSTD/湖与附件存储划分）", 2, 3, "3.2 数据与后端设计", "人工主导")
+T("d04", "DevB", "湖仓分层设计细化（分区sys_id+日期/Parquet+ZSTD/湖与附件存储划分）", 2, 3, "3.2 数据与后端设计", "AI辅助")
 T("d05", "DevB", "元数据库设计定稿（ER+35表+Migration）+数据字典v1（AI辅助）", 2, 3, "3.2 数据与后端设计", "AI辅助")
-T("d06", "DevB", "F01迁移方案定稿（SeaTunnel配置生成器+四层转换规则：类型映射/清洗/分区归约）", 2, 3, "3.2 数据与后端设计", "人工主导")
+T("d06", "DevB", "F01迁移方案定稿（SeaTunnel配置生成器+四层转换规则：类型映射/清洗/分区归约）", 2, 3, "3.2 数据与后端设计", "AI辅助")
 T("d07", "DevB", "F04与非功能设计定稿（加密/密钥/备份灾备方案+性能容量与「数据不出境」合规基线）", 1, 3, "3.2 数据与后端设计", "AI辅助", deps=["q5"])
 T("m2", "Wade", "设计评审通过+模块接口冻结◆M2", 0.5, 3, "3.1 架构与接口定稿", "人工主导", "设计评审纪要", ["a3", "a4", "d07"])
 TASKS["m2"]["ms"] = True
@@ -117,6 +121,7 @@ T("n4d3", "DevB", "测试环境先期部署（早期先部署测试环境，供�
 T("n4t3", "Mandy", "测试环境先期部署验证（N4-3）", n4[2][5], 3, "3.4 部署流水线与测试环境先期部署（N4-1/2/3）", "人工主导", deps=["n4d3"])
 
 # ---------------- Phase 4/5 功能开发（按拆解估算子任务，按角色拆行） ----------------
+MOVE_D2W = {("F02-01", 2), ("F02-02", 2), ("F05-02", 2), ("F05-03", 2), ("F06-01", 2), ("F06-03", 1), ("F08-01", 3), ("F08-02", 1), ("F03-02", 2), ("F04-01", 3), ("F06-02", 1)}
 BATCH1 = ["F08-01", "F08-02", "F08-03", "F08-04", "F08-05", "F01-01", "F01-02", "F01-03", "F01-04", "F01-05", "F02-01", "F02-02"]
 BATCH2 = ["F03-01", "F03-02", "F04-01", "F04-02", "F04-03", "F05-01", "F05-02", "F05-03", "F05-04", "F05-05", "F06-01", "F06-02", "F06-03"]
 PHASE_OF = {}
@@ -138,20 +143,23 @@ def feat_rows(fc, seq):
         ba_id = f"{fc}_ba"
         T(ba_id, "Mandy", f"BA：需求澄清与规则定义（{fc}）", ba, ph, gname, "AI辅助", deps=["m1"])
     for i, x in enumerate(subs, 1):
-        if x[3] > 0:
+        moved = (fc, i) in MOVE_D2W
+        if x[3] > 0 or moved:
             tid = f"{fc}_w{i}"
-            T(tid, "Wade", f"{x[0]}（前端/应用侧）", x[3], ph, gname, deps=["m1"])
+            eff = x[3] + (x[4] if moved else 0)
+            T(tid, "Wade", f"{x[0]}（前端/应用侧" + ("·含服务中间件，DevB瓶颈迁移）" if moved else "）"),
+              eff, ph, gname, deps=["m1"], remark="瓶颈迁移：DevB溢出，移Wade执行" if moved else None)
             w_ids.append(tid)
-        if x[4] > 0:
+        if x[4] > 0 and not moved:
             tid = f"{fc}_d{i}"
             T(tid, "DevB", f"{x[0]}（数据/服务侧）", x[4], ph, gname, deps=["m1"])
             d_ids.append(tid)
     if te > 0:
         te_id = f"{fc}_te"
-        T(te_id, "Mandy", f"测试：用例设计与执行（{fc}）", te, ph, gname, deps=w_ids + d_ids)
+        T(te_id, "Mandy", f"测试：用例设计与执行（{fc}·测试左移：AI用例随BA澄清先行、随CI构建持续验证）", te, ph, gname, ai="AI生成用例+人工审校执行", deps=([ba_id] if ba_id else ["m1"]))
     if SLC_BY_GRP.get(fc, 0) > 0:
         slc_id = f"{fc}_slc"
-        T(slc_id, "Mandy", f"SLC文档汇编（{fc}，按功能）", SLC_BY_GRP[fc], ph, gname, "AI辅助", deps=([te_id] if te_id else w_ids + d_ids))
+        T(slc_id, "Mandy", f"SLC文档汇编（{fc}，按功能·初稿随开发滚动AI反生成、定稿见7.1）", SLC_BY_GRP[fc], ph, gname, "AI辅助", deps=([ba_id] if ba_id else ["m1"]))
     return ba_id, (w_ids[-1] if w_ids else None), (d_ids[-1] if d_ids else None), te_id, slc_id
 
 FINFO = {}
@@ -174,89 +182,89 @@ T("n3w1", "Wade", "前端性能优化（懒加载/虚拟滚动/缓存/首屏指�
 T("n3w2", "Wade", "统一鉴权与数据掩码中间件（菜单/API/行级三层校验、掩码旁路防护·前端侧）", n3[2][3], 5, _g3, deps=[FINFO["F08-05"][1]])
 T("n3w3", "Wade", "可观测性·前端侧（App Insights SDK插桩/仪表盘）", n3[3][3], 5, _g3, deps=[FINFO["F06-03"][1]])
 T("n3d1", "DevB", "查询与数据性能（分区裁剪/Z-Order/Compaction/小文件治理）", n3[1][4], 5, _g3, "AI辅助", deps=[FINFO["F06-03"][2]])
-T("n3d2", "DevB", "统一鉴权与数据掩码中间件（服务侧）", n3[2][4], 5, _g3, deps=[FINFO["F08-05"][2]])
+T("n3d2", "Wade", "统一鉴权与数据掩码中间件（应用侧·瓶颈迁移）", n3[2][4], 5, _g3, deps=[FINFO["F08-05"][2]], remark="瓶颈迁移：应用中间件移Wade执行")
 T("n3d3", "DevB", "可观测性（日志/监控/告警）【原生】App Insights/Log Analytics/Azure Monitor：SDK插桩、作业监控对接与仪表盘", n3[3][4], 5, _g3, "AI生成+人工审核", deps=[FINFO["F06-03"][2]])
-T("n3d4", "DevB", "容量与增长验证（600~800表规模扩容压测与容量报告）", n3[4][4], 5, _g3, "AI辅助", deps=[FINFO["F06-03"][2]])
-T("n3t", "Mandy", "测试：非功能专项用例执行（N3：性能/鉴权掩码/可观测/容量）", sum(x[5] for x in n3), 5, _g3, deps=["n3w1", "n3d4"])
+T("n3d4", "DevB", "容量与增长验证（600~800表规模扩容压测与容量报告，样本+CC批次外推）", n3[4][4], 5, _g3, "AI辅助", deps=["m3"])
+T("n3t", "Mandy", "测试：非功能专项用例执行（N3：性能/鉴权掩码/可观测/容量）", sum(x[5] for x in n3), 5, _g3, ai="AI生成用例+人工审校执行", deps=["n3w1", "n3d4"])
 
 # 5.15/5.16/5.17
-T("incr", "DevB", "增量数据接入作业框架（在运系统冷数据周期接入）", 1, 5, "5.15 集成项与编码完成", "AI生成+人工审核", deps=[f"F01-01_d6"], remark="拆解估算外保留（原计划既有范围）")
+T("incr", "DevB", "增量数据接入作业框架（在运系统冷数据周期接入）——移上线后首月运维窗口执行", 0, 5, "5.15 集成项与编码完成", "人工主导", deps=["m4"], remark="直估1人天·B计划：不占本期窗口，上线后首月实施")
 T("chk", "Mandy", "26项功能完整性核对（追踪矩阵逐项）", 1, 5, "5.15 集成项与编码完成", "AI辅助",
-  deps=[FINFO[fc][3] for fc in BATCH2 if FINFO[fc][3]] + ["n3t"])
+  deps=[FINFO[fc][3] for fc in BATCH2 if FINFO[fc][3]])
 _dev_b2 = [FINFO[fc][2] for fc in BATCH2 if FINFO[fc][2]]
 T("m4", "Mandy", "26项功能编码完成+走查签字◆M4", 0.5, 5, "5.15 集成项与编码完成", "人工主导", "走查签字单、追踪矩阵26/26",
-  _dev_b2 + ["n3w3", "n3d4", "chk"])
+  _dev_b2 + ["chk"])
 TASKS["m4"]["ms"] = True
 
 # ---------------- Phase 6 集成、质量治理与CC迁移演练 ----------------
 n2 = NGRP["N2"]
 _g2 = "6.1 代码质量与静态扫描治理（N2）"
-T("n2w1", "Wade", "前端ESLint/Prettier规约（规则集接入CI、存量告警清零、格式统一）", n2[0][3], 6, _g2, "AI辅助", deps=["m4"])
-T("n2d1", "DevB", "后端SonarLint规约（代码异味/重复块/复杂度阈值治理清零）", n2[1][4], 6, _g2, "AI辅助", deps=["m4"])
-T("n2w2", "Wade", "SAST安全告警修复（硬编码密钥/注入/越权路径等·前端/应用）", n2[2][3], 6, _g2, "AI辅助", deps=["m4"])
-T("n2d2", "DevB", "SAST安全告警修复（数据/服务侧）", n2[2][4], 6, _g2, "AI辅助", deps=["m4"])
-T("n2w3", "Wade", "依赖漏洞治理（SCA·前端：版本锁定、漏洞升级、SBOM）", n2[3][3], 6, _g2, "AI辅助", deps=["m4"])
-T("n2d3", "DevB", "依赖漏洞治理（SCA·后端）", n2[3][4], 6, _g2, "AI辅助", deps=["m4"])
-T("n2w4", "Wade", "技术债偿还与外部评审落实（A侧）", n2[4][3], 6, _g2, "人工主导", deps=["m4"])
-T("n2d4", "DevB", "技术债偿还与外部评审落实（B侧）", n2[4][4], 6, _g2, "人工主导", deps=["m4"])
-T("n2t", "Mandy", "测试：质量治理抽检（N2）", sum(x[5] for x in n2), 6, _g2, deps=["n2w4", "n2d4"])
+T("n2w1", "Wade", "前端ESLint/Prettier规约（规则集接入CI、存量告警清零、格式统一）", n2[0][3], 6, _g2, "AI辅助", deps=["m3"])
+T("n2d1", "DevB", "后端SonarLint规约（代码异味/重复块/复杂度阈值治理清零）", n2[1][4], 6, _g2, "AI辅助", deps=["m3"])
+T("n2w2", "Wade", "SAST安全告警修复（硬编码密钥/注入/越权路径等·前端/应用）", n2[2][3], 6, _g2, "AI辅助", deps=["m3"])
+T("n2d2", "DevB", "SAST安全告警修复（数据/服务侧）", n2[2][4], 6, _g2, "AI辅助", deps=["m3"])
+T("n2w3", "Wade", "依赖漏洞治理（SCA·前端：版本锁定、漏洞升级、SBOM）", n2[3][3], 6, _g2, "AI辅助", deps=["m3"])
+T("n2d3", "DevB", "依赖漏洞治理（SCA·后端）", n2[3][4], 6, _g2, "AI辅助", deps=["m3"])
+T("n2w4", "Wade", "技术债偿还与外部评审落实（A侧）", n2[4][3], 6, _g2, "人工主导", deps=["m3"])
+T("n2d4", "DevB", "技术债偿还与外部评审落实（B侧）", n2[4][4], 6, _g2, "人工主导", deps=["m3"])
+T("n2t", "Mandy", "测试：质量治理抽检（N2）", sum(x[5] for x in n2), 6, _g2, ai="AI生成用例+人工审校执行", deps=["n2w4", "n2d4"])
 T("n2s", "Mandy", "SLC文档汇编：质量治理（N2）", SLC_BY_GRP["N2"], 6, _g2, "AI辅助", deps=["n2t"])
 
-T("i1", "Wade", "全链路集成联调（CC真实数据：登录→检索→预览→导出→审计）", 2, 6, "6.2 全链路集成与CC适配（Wade）", "人工主导", deps=["m4"])
+T("i1", "Wade", "全链路集成联调（CC真实数据：登录→检索→预览→导出→审计）", 2, 6, "6.2 全链路集成与CC适配（Wade）", "人工主导", deps=["m3"])
 T("i2", "Wade", "CC数据界面适配（字段类型/格式差异，F05检索/预览真实数据兼容）", 3, 6, "6.2 全链路集成与CC适配（Wade）")
 T("i3", "Wade", "前端缺陷修复轮1", 1, 6, "6.2 全链路集成与CC适配（Wade）", "AI辅助")
 T("i4", "Wade", "缺陷修复收敛（前端P0/P1清零）", 2, 6, "6.2 全链路集成与CC适配（Wade）", "AI辅助")
 
-T("c1", "DevB", "CC真实数据迁移演练I：1253表扫描分类→600~800有效表分批迁移启动", 3.5, 6, "6.3 CC迁移演练与数据收敛（DevB·关键路径）", "自动化流水线", deps=["m4"])
+T("c1", "DevB", "CC真实数据迁移演练I：1253表扫描分类→600~800有效表分批迁移启动", 3.5, 6, "6.3 CC迁移演练与数据收敛（DevB·关键路径）", "自动化流水线", deps=["m3", "F01-05_d2", "F02-02_d1"])
 T("c2", "DevB", "迁移演练II：逐批对账+数据问题处理（SQL Server特有类型/脏数据/小文件合并）", 2.5, 6, "6.3 CC迁移演练与数据收敛（DevB·关键路径）", "AI辅助")
 T("c3", "DevB", "CC全量对账报告（四层行数与字节+差异处理记录）", 1, 6, "6.3 CC迁移演练与数据收敛（DevB·关键路径）", "AI辅助", deliv="全量对账报告")
 T("c4", "DevB", "数据/服务缺陷修复收敛（P0/P1清零）", 2, 6, "6.3 CC迁移演练与数据收敛（DevB·关键路径）", "AI辅助")
 T("c5", "DevB", "CC生产迁移预跑方案+迁移Runbook定稿", 1, 6, "6.3 CC迁移演练与数据收敛（DevB·关键路径）", "AI辅助", deliv="迁移Runbook")
 T("c6", "DevB", "CC迁移演练对账通过◆（M5·B侧）", 1, 6, "6.3 CC迁移演练与数据收敛（DevB·关键路径）", "人工主导", deps=["c5"])
 
-T("u0", "Mandy", "UAT脚本初稿（CC真实场景）", 2, 6, "6.4 系统测试轮1与UAT准备（Mandy）", "AI辅助", deps=["m4"])
-T("u1", "Mandy", "系统测试轮1执行（26项全用例+非功能初验：性能粗测/安全越权与掩码旁路用例，样本+CC混合）", 3, 6, "6.4 系统测试轮1与UAT准备（Mandy）", "AI辅助", deps=["c2"])
-T("u2", "Mandy", "轮1回归+缺陷报告", 1.5, 6, "6.4 系统测试轮1与UAT准备（Mandy）", "AI辅助")
-T("u3", "Mandy", "UAT脚本定稿+业务方排期确认", 1, 6, "6.4 系统测试轮1与UAT准备（Mandy）", "人工主导")
+T("u0", "Mandy", "UAT脚本初稿（CC真实场景）", 2, 6, "6.4 系统测试轮1与UAT准备（Mandy）", "AI辅助", deps=["q6"])
+T("u1", "Mandy", "系统测试轮1执行（26项全用例+非功能初验：性能粗测/安全越权与掩码旁路用例，样本+CC混合）", 3, 6, "6.4 系统测试轮1与UAT准备（Mandy）", "AI生成用例+人工审校执行", deps=["c2"])
+T("u2", "Mandy", "轮1回归+缺陷报告", 1.5, 6, "6.4 系统测试轮1与UAT准备（Mandy）", "AI生成用例+人工审校执行")
+T("u3", "Mandy", "UAT脚本定稿+业务方排期确认", 1, 6, "6.4 系统测试轮1与UAT准备（Mandy）", "人工主导", deps=["u2"])
 
-T("m5", "Wade", "代码冻结+发布就绪评审◆M5（A/B两侧）", 1, 6, "6.5 代码冻结", "人工主导", "冻结基线、发布就绪清单",
-  ["n2w4", "n2d4", "i4", "c6", "u3"])
+T("m5", "Mark", "代码冻结+发布就绪评审◆M5（A/B两侧，含N3非功能收口·PM主持）", 1, 6, "6.5 代码冻结", "人工主导", "冻结基线、发布就绪清单",
+  ["n2w4", "n2d4", "i4", "c6", "n3w3", "n3d4"])
 TASKS["m5"]["ms"] = True
 
 # ---------------- Phase 7 系统测试、UAT与生产就绪 ----------------
-T("f1", "Mandy", "系统测试全量执行（26项逐项+汇总NFR专项结果，CC真实数据：检索/预览/导出/审计/处置）", 2, 7, "7.1 全量测试与UAT（Mandy）", "AI辅助", deps=["m5", "u2"])
-T("f2", "Mandy", "缺陷回归与关闭（或书面接受）", 1, 7, "7.1 全量测试与UAT（Mandy）", "AI辅助")
+T("f1", "Mandy", "系统测试全量执行（26项逐项+汇总NFR专项结果，CC真实数据：检索/预览/导出/审计/处置）", 2, 7, "7.1 全量测试与UAT（Mandy）", "AI生成用例+人工审校执行", deps=["u2", "n3d4", "c6", "i4"])
+T("f2", "Mandy", "缺陷回归与关闭（或书面接受）", 1, 7, "7.1 全量测试与UAT（Mandy）", "AI生成用例+人工审校执行")
 T("m6", "Mandy", "UAT组织与主持（业务方按CC场景验收）◆M6", 1, 7, "7.1 全量测试与UAT（Mandy）", "人工主导", "UAT报告、业务方签字", ["f2"])
 TASKS["m6"]["ms"] = True
 T("f3", "Mandy", "系统测试报告+UAT报告定稿+SLC合稿定稿V1.0", 1, 7, "7.1 全量测试与UAT（Mandy）", "AI辅助", deps=["m6"])
 
-T("p1", "Wade", "缺陷快速修复（前端/应用）", 1, 7, "7.2 生产就绪与非功能专项（Wade/DevB）", "AI生成+人工审核", deps=["m5"])
-T("p2", "Wade", "性能专项验证与调优（检索响应/预览加载/导出吞吐/并发，对照NFR指标）", 2, 7, "7.2 生产就绪与非功能专项（Wade/DevB）", "AI辅助", deps=["m5"])
-T("p3", "DevB", "缺陷快速修复（数据/服务）", 1, 7, "7.2 生产就绪与非功能专项（Wade/DevB）", "AI生成+人工审核", deps=["m5"])
+T("p1", "Wade", "缺陷快速修复（前端/应用）", 1, 7, "7.2 生产就绪与非功能专项（Wade/DevB）", "AI生成+人工审核", deps=["m4", "c6"])
+T("p2", "Wade", "性能专项验证与调优（检索响应/预览加载/导出吞吐/并发，对照NFR指标）", 2, 7, "7.2 生产就绪与非功能专项（Wade/DevB）", "AI辅助", deps=["m4", "c6"])
+T("p3", "DevB", "缺陷快速修复（数据/服务）", 1, 7, "7.2 生产就绪与非功能专项（Wade/DevB）", "AI生成+人工审核", deps=["m4"])
 T("p4", "DevB", "CC生产迁移预跑（全流程dry-run）", 2, 7, "7.2 生产就绪与非功能专项（Wade/DevB）", "自动化流水线", deps=["c6"])
-T("p5", "DevB", "安全与可靠性专项验证（越权/掩码旁路用例执行+备份恢复与灾备切换演练，对照NFR基线）", 1.5, 7, "7.2 生产就绪与非功能专项（Wade/DevB）", "AI辅助", deps=["m5"])
+T("p5", "DevB", "安全与可靠性专项验证（越权/掩码旁路用例执行+备份恢复与灾备切换演练，对照NFR基线）", 1.5, 7, "7.2 生产就绪与非功能专项（Wade/DevB）", "AI辅助", deps=["m4", "c6"])
 T("p6", "DevB", "部署预演与回退预案（N4-4：预生产完整演练、回退验证）", n4[3][4], 7, "7.2 生产就绪与非功能专项（Wade/DevB）", "人工主导", deps=["p4"])
 T("p7", "DevB", "生产数据就绪核查清单执行", 1, 7, "7.2 生产就绪与非功能专项（Wade/DevB）", "AI辅助", deps=["p4"])
-T("p8", "Wade", "生产就绪评审（Runbook/配置/回退/NFR达标确认）", 1, 7, "7.2 生产就绪与非功能专项（Wade/DevB）", "人工主导", deps=["m6", "p6", "p7"])
+T("p8", "Mark", "生产就绪评审（Runbook/配置/回退/NFR达标确认·PM主持）", 1, 7, "7.2 生产就绪与非功能专项（Wade/DevB）", "人工主导", deps=["m6", "p6", "p7"])
 
 n5 = NGRP["N5"]
 _g5 = "7.3 开发侧文档定稿（N5）"
-T("n5w1", "Wade", "架构与总体设计文档（架构图/部署视图/ADR汇编成文）", n5[0][3], 7, _g5, "AI辅助", deps=["m5"])
-T("n5w2", "Wade", "应用接口与模块设计文档（OpenAPI导出+模块设计说明）", n5[1][3], 7, _g5, "AI辅助", deps=["m5"])
-T("n5d1", "DevB", "数据设计与ETL/作业文档（分层设计/数据字典/ETL与作业说明）", n5[2][4], 7, _g5, "AI辅助", deps=["m5"])
+T("n5w1", "Wade", "架构与总体设计文档（架构图/部署视图/ADR汇编成文）", n5[0][3], 7, _g5, "AI辅助", deps=["m2"])
+T("n5w2", "Wade", "应用接口与模块设计文档（OpenAPI导出+模块设计说明）", n5[1][3], 7, _g5, "AI辅助", deps=["i4"])
+T("n5d1", "DevB", "数据设计与ETL/作业文档（分层设计/数据字典/ETL与作业说明）", n5[2][4], 7, _g5, "AI辅助", deps=["c6"])
 T("n5s", "Mandy", "SLC文档汇编：开发侧文档合稿评审（N5）", SLC_BY_GRP["N5"], 7, _g5, "AI辅助", deps=["n5w2", "n5d1"])
 
 # ---------------- Phase 8 上线与交付 ----------------
 T("g1", "Wade", "生产部署执行（K8s生产环境：服务+前端+UC初始配置）", 1, 8, "8.1 生产部署与全量迁移", "人工主导", "生产系统", deps=["p8"])
-T("g2", "DevB", "CC生产全量迁移（分批迁移+终版对账）", 3, 8, "8.1 生产部署与全量迁移", "自动化流水线", deps=["g1"])
+T("g2", "DevB", "CC生产全量迁移（分批迁移+终版对账·自动化执行+值守）", 3, 8, "8.1 生产部署与全量迁移", "AI辅助", deps=["g1"])
 T("g3", "DevB", "生产数据就绪核查+生产作业启动（增量接入/到期处置调度）", 1, 8, "8.1 生产部署与全量迁移", "AI辅助", deps=["g2"])
 T("g4", "Wade", "上线验证（冒烟+核心场景界面核对：检索/预览/导出/审计）", 1, 8, "8.1 生产部署与全量迁移", "人工主导", deps=["g1"])
 T("h1", "Mandy", "上线首日支持与问题记录（业务侧）", 0.5, 8, "8.2 上线值守与交付收尾", "人工主导", deps=["g1"])
 T("h2", "Mandy", "CC核心场景业务确认（业务方）", 1, 8, "8.2 上线值守与交付收尾", "人工主导", deps=["g4"])
 T("h3", "Mandy", "上线Checklist执行与交付物核对", 1, 8, "8.2 上线值守与交付收尾", "AI辅助", deps=["h2"])
-T("h4", "Mandy", "项目复盘与经验教训文档（AI辅助成文）", 1, 8, "8.2 上线值守与交付收尾", "AI辅助", deps=["h3"])
+T("h4", "Mandy", "项目复盘与经验教训文档（交付会12/31后AI成文归档）", 0, 8, "8.2 上线值守与交付收尾", "人工主导", deps=["m7"], remark="直估1人天·交付后首日（1/4）收尾，不阻塞交付")
 T("h5w", "Wade", "上线值守与运维交接（N4-5·应用侧：上线窗口值守、运维交接与培训材料）", n4[4][3], 8, "8.2 上线值守与交付收尾", "人工主导", deps=["g4"])
-T("h5d", "DevB", "上线值守与运维交接（N4-5·数据侧）", n4[4][4], 8, "8.2 上线值守与交付收尾", "人工主导", deps=["g3"])
+T("h5d", "DevB", "上线值守与运维交接（N4-5·数据侧）", n4[4][4], 8, "8.2 上线值守与交付收尾", "人工主导", deps=["g1"])
 T("h5s", "Mandy", "SLC文档汇编：部署与运维（N4）", SLC_BY_GRP["N4"], 8, "8.2 上线值守与交付收尾", "AI辅助", deps=["p6"])
 T("m7", "Mark", "生产上线成功·项目交付完成◆M7", 0, 8, "8.2 上线值守与交付收尾", "人工主导", "交付确认单", ["g3", "g4", "h3"])
 TASKS["m7"]["ms"] = True
@@ -264,28 +272,27 @@ TASKS["m7"]["ms"] = True
 # ---------------- 排队顺序（每人严格串行） ----------------
 Wade_ORDER = ["n1w1", "n1w4", "n1w2", "n1w5", "n4w1", "n4w2",
               "a1", "a2", "a3", "a4", "m2"] + \
-             [f"{fc}_w{i}" for fc in BATCH1 for i, x in enumerate(FEAT[fc], 1) if x[3] > 0] + \
+             [f"{fc}_w{i}" for fc in BATCH1 for i, x in enumerate(FEAT[fc], 1) if x[3] > 0 or (fc, i) in MOVE_D2W] + \
              ["m3"] + \
-             [f"{fc}_w{i}" for fc in BATCH2 for i, x in enumerate(FEAT[fc], 1) if x[3] > 0] + \
-             ["n3w1", "n3w2", "n3w3", "n2w1", "n2w2", "n2w3", "n2w4",
-              "i1", "i2", "i3", "i4", "m5", "p1", "p2", "p8", "n5w1", "n5w2", "g1", "g4", "h5w"]
+             [f"{fc}_w{i}" for fc in BATCH2 for i, x in enumerate(FEAT[fc], 1) if x[3] > 0 or (fc, i) in MOVE_D2W] + \
+             ["n3w1", "n3w2", "n3w3", "n3d2", "i1", "i2", "i3", "i4", "n5w2",
+              "n5w1", "p1", "p2", "n2w1", "n2w2", "n2w3", "n2w4", "g1", "g4", "h5w"]
 DevB_ORDER = ["d01", "d02", "d03", "d04", "d05", "d06", "d07",
               "n1d1", "n1d3", "n1d4", "n1d5", "n4d1", "n4d2", "n4d3"] + \
-             [f"{fc}_d{i}" for fc in BATCH1 for i, x in enumerate(FEAT[fc], 1) if x[4] > 0] + \
-             ["incr"] + \
-             [f"{fc}_d{i}" for fc in BATCH2 for i, x in enumerate(FEAT[fc], 1) if x[4] > 0] + \
-             ["n3d1", "n3d2", "n3d3", "n3d4", "n2d1", "n2d2", "n2d3", "n2d4",
-              "c1", "c2", "c3", "c4", "c5", "c6", "p3", "p4", "p5", "p6", "p7", "n5d1", "g2", "g3", "h5d"]
-Mandy_ORDER = ["q1", "q2", "q3", "q4", "m1", "q5", "q6", "q7", "n1t", "n1s", "n4t3"] + \
+             [f"{fc}_d{i}" for fc in BATCH1 for i, x in enumerate(FEAT[fc], 1) if x[4] > 0 and (fc, i) not in MOVE_D2W] + \
+             [f"{fc}_d{i}" for fc in BATCH2 for i, x in enumerate(FEAT[fc], 1) if x[4] > 0 and (fc, i) not in MOVE_D2W] + \
+             ["n2d1", "n2d2", "n2d3", "n2d4", "c1", "c2", "c3", "c4", "c5", "c6", "n3d1", "n3d3", "n3d4",
+              "p3", "p4", "p5", "p6", "p7", "n5d1", "g2", "h5d", "g3", "incr"]
+Mandy_ORDER = ["q1", "q2", "q3", "q4", "m1", "q5", "q6", "u0", "q7", "n1t", "n1s", "n4t3"] + \
               [f"{fc}_ba" for fc in BATCH1 if TASKS.get(f"{fc}_ba")] + \
               ["ds"] + \
               [x for fc in BATCH1 for x in (FINFO[fc][3], FINFO[fc][4]) if x] + \
               ["m3s"] + \
               [f"{fc}_ba" for fc in BATCH2 if TASKS.get(f"{fc}_ba")] + \
               [x for fc in BATCH2 for x in (FINFO[fc][3], FINFO[fc][4]) if x] + \
-              ["n3ba", "n3t", "chk", "m4", "u0", "n2t", "n2s", "u1", "u2", "u3",
-               "f1", "f2", "m6", "f3", "n5s", "h5s", "h1", "h2", "h3", "h4"]
-ORDER["Mark"] = ["m7"]
+              ["n3ba", "u1", "u2", "u3",
+               "f1", "f2", "chk", "m4", "m6", "f3", "n3t", "n2t", "n2s", "n5s", "h5s", "h1", "h2", "h3", "h4"]
+ORDER["Mark"] = ["p8", "m5", "m7"]
 for who, order in (("Wade", Wade_ORDER), ("DevB", DevB_ORDER), ("Mandy", Mandy_ORDER)):
     ORDER[who] = order
     assert set(order) == {t for t, v in TASKS.items() if v["owner"] == who}, \
@@ -296,6 +303,11 @@ cur = 0
 cursors = {w: 0 for w in ORDER}
 while any(cursors[w] < len(ORDER[w]) for w in ORDER):
     if cur >= len(WD):
+        for w, order in ORDER.items():
+            if cursors[w] < len(order):
+                t = TASKS[order[cursors[w]]]
+                depst = [(d, TASKS[d]["end"], TASKS[d]["owner"]) for d in t["deps"]]
+                print(f"卡住 {w}: {t['id']} deps={depst}")
         raise RuntimeError("日历耗尽")
     day = WD[cur]
     for w, order in ORDER.items():
@@ -326,6 +338,8 @@ while any(cursors[w] < len(ORDER[w]) for w in ORDER):
 
 unfinished = [t["id"] for t in TASKS.values() if t["eff"] > 1e-9 and t["end"] is None]
 assert not unfinished, f"未完成: {unfinished}"
+_late = [(t["id"], t["end"]) for t in TASKS.values() if t["end"] and t["end"] > DEADLINE]
+assert not _late, f"超出2026/12/31: {_late}"
 
 # ---------------- 贯穿型/固定日期行（PM 与 Mandy 支持） ----------------
 M1, M2, M3 = TASKS["m1"]["end"], TASKS["m2"]["end"], TASKS["m3"]["end"]
@@ -351,9 +365,9 @@ SPREAD_LEAVES = [
     ("1.2.5", "1.2", "Mandy", 1, dt.date(2026, 9, 21), prev_wd(M7), "AI辅助", "会议纪要与项目文档整理（配合PM，贯穿全周期）"),
     ("1.3.1", "1.3", "Mark", 1, M7, M7, "人工主导", "项目交付确认与总结会◆M7"),
 ]
-TASKS["q_spread"] = dict(id="q_spread", owner="Mandy", name="需求澄清与变更支持（贯穿开发期：功能+非功能）", eff=1,
+TASKS["q_spread"] = dict(id="q_spread", owner="Mandy", name="需求澄清与变更支持（贯穿开发期：功能+非功能）", eff=1, sched=0.75,
                          phase=2, group="2.4 需求贯穿支持", ai="AI辅助", deliv=None, deps=[],
-                         start=DEV1_START, end=M5, days=set(), spread=True, ms=False, remark=None)
+                         start=DEV1_START, end=M5, days=set(), spread=True, ms=False, remark=None, factor=0.75)
 
 # ================= 渲染 WBS分解（先在内存聚合，再按 序 输出） =================
 PH_TITLES = {
@@ -369,7 +383,7 @@ PH_TITLES = {
 GROUP_ORDER = {}
 for ph in range(2, 9):
     seen = []
-    for who in ("Mandy", "Wade", "DevB"):
+    for who in ("Mandy", "Wade", "DevB", "Mark"):
         for tid in ORDER.get(who, []):
             t = TASKS[tid]
             if t["phase"] == ph and t["group"] not in seen:
@@ -386,7 +400,7 @@ GROUP_ORDER[3] = ["3.1 架构与接口定稿", "3.2 数据与后端设计",
                   "3.3 工程初始化与开发基座（N1）", "3.4 部署流水线与测试环境先期部署（N4-1/2/3）"]
 
 group_leaves = {ph: {g: [] for g in GROUP_ORDER[ph]} for ph in range(2, 9)}
-for who in ("Mandy", "Wade", "DevB"):
+for who in ("Mandy", "Wade", "DevB", "Mark"):
     for tid in ORDER[who]:
         t = TASKS[tid]
         group_leaves[t["phase"]][t["group"]].append(tid)
@@ -424,12 +438,12 @@ for c, w in {"A": 10, "B": 52, "C": 6, "D": 30, "E": 11, "F": 11, "G": 11, "H": 
              "J": 15, "K": 14, "L": 9, "M": 8, "N": 8, "O": 11, "P": 11, "Q": 42}.items():
     ws.column_dimensions[c].width = w
 ws.merge_cells("A1:Q1")
-ws["A1"] = "RIMS数据归档平台Phase1 · 项目工作分解结构（WBS）表 — AI Native版 · V2.0按「功能拆解估算」直估重排"
+ws["A1"] = "RIMS数据归档平台Phase1 · 项目工作分解结构（WBS）表 — AI Native版 · V2.1按「功能拆解估算」排期（AI Native执行折算，交付2026/12/30前）"
 ws["A1"].font = F_TITLE; ws["A1"].fill = FILL_NAVY; ws["A1"].alignment = CENTER
 ws.row_dimensions[1].height = 24
 ws["A2"] = "项目名称：RIMS退役系统数据归档平台·Phase1（基础归档与查询）"
 ws["F2"] = "项目经理：Mark"
-ws["I2"] = f"编制日期：2026/9/2  版本：V2.0（直估重排）  窗口：2026/9/14 → {M7.strftime('%Y/%m/%d')}"
+ws["I2"] = f"编制日期：2026/9/2  版本：V2.1（直估×AI执行系数排期）  窗口：2026/9/14 → {M7.strftime('%Y/%m/%d')}（不跨年）"
 headers = ["WBS编号", "任务名称", "层级", "交付物/成果", "负责人", "开始日期", "结束日期", "工期(天)",
            "工作量(人天)", "AI参与方式", "前置任务", "状态", "进度", "优先级", "预算(元)", "实际成本(元)", "备注"]
 for i, h in enumerate(headers, 1):
@@ -456,7 +470,7 @@ def style_row(r, level, ms=False):
     ws.cell(r, 8).number_format = "0"
     ws.cell(r, 9).number_format = "0.##"
 
-def emit_leaf(code, owner, name, s, e, eff, ai, deliv=None, ms=False, remark=None, deps=None, tid=None, dep_codes=None):
+def emit_leaf(code, owner, name, s, e, eff, ai, deliv=None, ms=False, remark=None, deps=None, tid=None, dep_codes=None, raw=None, factor=None):
     global row
     ws.cell(row, 1, code); ws.cell(row, 2, name); ws.cell(row, 3, 3)
     ws.cell(row, 4, deliv); ws.cell(row, 5, owner)
@@ -465,7 +479,11 @@ def emit_leaf(code, owner, name, s, e, eff, ai, deliv=None, ms=False, remark=Non
     ws.cell(row, 10, ai)
     if dep_codes:
         ws.cell(row, 11, ",".join(dep_codes)[:250])
-    ws.cell(row, 17, remark)
+    if raw is not None and factor:
+        tag = f"直估{raw:g}·AI执行×{factor}"
+        ws.cell(row, 17, (remark + "；" + tag) if remark else tag)
+    else:
+        ws.cell(row, 17, remark)
     style_row(row, 3, ms)
     if tid:
         code_map[tid] = code
@@ -486,7 +504,8 @@ for gcode, gname, leaves in PH1:
     g_row = row; row += 1
     g_first = g_row + 1
     for (lcode, owner, eff, s, e, ai, name, deliv, ms) in leaves:
-        emit_leaf(lcode, owner, name, s, e, eff, ai, deliv, ms)
+        sc = round(eff * AI_F[ai], 2)
+        emit_leaf(lcode, owner, name, s, e, sc, ai, deliv, ms, raw=eff, factor=(AI_F[ai] if AI_F[ai] < 1 else None))
     ss = [l[3] for l in leaves]; ee = [l[4] for l in leaves]
     ws.cell(g_row, 5, "/".join(sorted({l[1] for l in leaves})))
     ws.cell(g_row, 6, min(ss)); ws.cell(g_row, 7, max(ee))
@@ -512,9 +531,10 @@ for ph in range(2, 9):
         for n, tid in enumerate(leaves, 1):
             t = TASKS[tid]
             lcode = f"{gcode}.{n}"
-            emit_leaf(lcode, t["owner"], t["name"], t["start"], t["end"], t["eff"], t["ai"], t["deliv"],
+            emit_leaf(lcode, t["owner"], t["name"], t["start"], t["end"], t["sched"], t["ai"], t["deliv"],
                       ms=t["ms"], remark=t["remark"], tid=tid,
-                      dep_codes=[code_map[d] for d in t["deps"] if d in code_map] if t["deps"] else None)
+                      dep_codes=[code_map[d] for d in t["deps"] if d in code_map] if t["deps"] else None,
+                      raw=t["eff"], factor=t["factor"])
             if t["ms"]:
                 MS_ROWS.append((t["id"], lcode, t["end"]))
         ss = [TASKS[t]["start"] for t in leaves if TASKS[t]["start"]]
@@ -572,8 +592,8 @@ for name, key, deliv, exit_, owner in MS_DEF:
                                             horizontal="left" if c in (4, 5) else "center")
     ms.row_dimensions[r].height = 30
     r += 1
-ms.cell(r + 1, 1, "注：V2.0按「功能拆解估算」直估重排（不折算AI提效），总量超出9/14~12/16窗口（每人62个工作日），里程碑自M3起整体后延；"
-                  "2027年元旦（1/1~1/3）与春节（按正月初一2/6估算，假设2/5~2/11）假期已避开，春节安排以国务院后续发布为准。").font = Font(italic=True, size=9, color="C00000")
+ms.cell(r + 1, 1, "注：V2.1按「功能拆解估算」排期，人天=直估×AI执行系数（AI生成+人工审核×0.7／AI辅助×0.8／自动化流水线×0.9／人工主导×1.0，见J列与Q列直估对照）；"
+                  "DevB溢出按复查块既定路径消化（6项中间件/查询任务移Wade、增量接入移上线后首月）；交付锁定2026年内（12/30，12/31为缓冲）。").font = Font(italic=True, size=9, color="C00000")
 
 # ---- WBS词典 ----
 d = wb["WBS词典"]
@@ -649,7 +669,7 @@ wb.save(PATH)
 print("=== V2.0 直估重排结果 ===")
 for k in ("M1", "M2", "M3", "M4", "M5", "M6", "M7"):
     print(f"{k}: {MS_DATES[k]}")
-print("每人工作量:", {k: round(v, 2) for k, v in sorted(per_person.items())})
+print("每人排期人天:", {k: round(v, 2) for k, v in sorted(per_person.items())})
 print("总计:", round(sum(per_person.values()), 2))
 print("末行:", LAST_ROW)
 for w in ("Wade", "DevB", "Mandy"):

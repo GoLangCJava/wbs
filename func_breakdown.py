@@ -220,7 +220,7 @@ wsn = wb.create_sheet("功能拆解估算", wb.sheetnames.index("功能视角分
 wsn.sheet_properties.tabColor = "8FA9DB"
 wsn.merge_cells("A1:L1")
 wsn["A1"] = (f"功能拆解估算（子任务级直估）：模块→功能→子任务三层结构，{len(B)}项功能×{sum(len(s[1]) for s in B)}子任务"
-             f" + 非功能与工程支撑×{sum(len(s[2]) for s in N)}子任务（F04-04异地灾备=Azure Blob原生能力，不计开发）— 独立估算，不锚定计划185人天；V2.0已按本表直估重排WBS（交付2027/3/24）")
+             f" + 非功能与工程支撑×{sum(len(s[2]) for s in N)}子任务（F04-04异地灾备=Azure Blob原生能力，不计开发）— 独立估算，不锚定计划185人天；V2.1已按本表排期WBS（直估×AI执行系数=214.3人天，交付2026/12/31）")
 wsn["A1"].font = F_TITLE; wsn["A1"].fill = FILL_NAVY; wsn["A1"].alignment = CENTER
 wsn.row_dimensions[1].height = 26
 GH = ["子任务编号", "模块", "功能/组名称", "子任务/工作包", "工作内容要点", "BA人天", "开发A·Wade", "开发B·DevB", "测试人天", "SLC人天（按功能）", "小计", "功能/组小计"]
@@ -314,7 +314,7 @@ grand = round(sum(gt), 2)
 note = ("对照说明（四个口径）：① 功能直估 %s 人天（BA %s / Wade %s / DevB %s / 测试 %s / SLC %s）——已按配置界面/动态表单复杂度上调前端工作量；"
         "② 非功能与工程支撑直估 %s 人天（N1初始化与基座/N2 ESLint·SonarLint·SAST·依赖治理/N3性能·鉴权掩码·可观测·容量/N4部署运维）；"
         "③ 已识别原生组件能力（按配置+验证计价，子任务标注【原生】/【中间件】）：ADLS SSE/CMK加密、ADLS GRS异地冗余、Key Vault密钥管理、SQL DB PITR备份与Monitor告警、Entra ID+MSAL单点登录、App Insights/Log Analytics可观测性、Unity Catalog授权、Azure DevOps扫描门禁；"
-        "④ 合计 %s 人天为「功能+非功能工程」直估（需求/设计/CC迁移演练/系统测试/UAT/上线等环节约102人天另计，见WBS分解V2.0）；Wade %s / DevB %s（超原计划60约%s）／Mandy三职 %s（BA %s + 测试 %s + SLC %s，超原计划50约%s）——已按直估重排WBS（V2.0，全员297.5人天、交付2027/3/24）；如须压回原计划185/2026-12-16交付，见下方折算对照（备选路径，未采用）。"
+        "④ 合计 %s 人天为「功能+非功能工程」直估（需求/设计/CC迁移演练/系统测试/UAT/上线等环节约102人天另计，见WBS分解V2.0）；Wade %s / DevB %s（超原计划60约%s）／Mandy三职 %s（BA %s + 测试 %s + SLC %s，超原计划50约%s）——V2.1已按本表排期：直估297.5×AI执行系数=214.3人天/73工作日，交付2026/12/31（见下方V2.1行与WBS分解）。"
         % (round(sum(feat_tot), 2), feat_tot[0], feat_tot[1], feat_tot[2], feat_tot[3], feat_tot[4],
            round(sum(nfr_tot), 2), grand, gt[1], gt[2], round(gt[2] - 60, 2),
            round(gt[0] + gt[3] + gt[4], 2), gt[0], gt[3], gt[4], round(gt[0] + gt[3] + gt[4] - 50, 2)))
@@ -329,11 +329,11 @@ mandy_g = round(gt[0] + gt[3] + gt[4], 2)
 mandy_adj = round(gt[0] + gt[3] * 0.65 + gt[4] * 0.8, 2)
 devb_adj = round(gt[2] * 0.85, 2)
 _lines = [
-    ("AI Native提效折算对照（压缩回2026/12/16交付的备选路径，V2.0未采用——现行排期见WBS分解V2.0）：", True),
+    ("AI Native提效折算对照（角色级粗折算参考，V2.1实际采用更细的按行AI执行系数排期）：", True),
     ("· Mandy：直估 %s（BA %s + 测试 %s + SLC %s，SLC已按功能级预估且开发侧文档移至N5）→ 测试×0.65（AI生成用例+人工审校执行）、SLC×0.8（合稿评审）、BA不折减 → ≈%s（≈原计划50）" % (mandy_g, gt[0], gt[3], gt[4], mandy_adj), False),
     ("· Wade：直估 %s（含N5开发侧文档2.5）≈ 原计划60，基本持平" % (gt[1],), False),
     ("· DevB：直估 %s → ETL/SQL/作业配置AI生成×0.85 → ≈%s（≈原计划60；最大风险假设：AI生成ETL需有效落地，纳入风险跟踪）" % (gt[2], devb_adj), False),
-    ("· 合计：直估 %s → 折算 ≈%s + PM 15 = %s ≤ 185，余 ≈%s 人天缓冲；采用此路径方可压回原12/16窗口；V2.0现行排期为不折算、整体后延至2027/3/24" % (grand, round(gt[1] + mandy_adj + devb_adj, 2), round(gt[1] + mandy_adj + devb_adj + 15, 2), round(185 - gt[1] - mandy_adj - devb_adj - 15, 2)), False),
+    ("· 合计：直估 %s → 折算 ≈%s + PM 15 = %s ≤ 185，余 ≈%s 人天缓冲；实际排期见WBS分解V2.1（更细粒度：按行系数+测试左移+瓶颈迁移，交付2026/12/31）" % (grand, round(gt[1] + mandy_adj + devb_adj, 2), round(gt[1] + mandy_adj + devb_adj + 15, 2), round(185 - gt[1] - mandy_adj - devb_adj - 15, 2)), False),
 ]
 rr2 = r + 4
 for text, bold in _lines:
@@ -356,8 +356,9 @@ rv = [
     ("· 日历容量：9/14~12/16 共%d个工作日/人（已扣国庆10/1-7、中秋9/25、全部周末；另有备用赶工日9/20、10/10两个）。" % CAL, False),
     ("· 逐项过检：%d子任务全部复核，修正7处——上调4处（SeaTunnel导入作业D2→2.5、处置引擎D2.5→3、预览服务D1.5→2、ADO连接K8s与部署流水线1.25→2：按分片断点续传/物理清除/多格式转换/双环境流水线的实际工序估）；下调3处（原系统档案录入W1.5→1、角色管理界面W2→1.5、数据设计文档D2→1.5：AI生成CRUD组件与成文足够覆盖）；其余项维持——CRUD/配置类AI直估可完成、原生组件已按配置+验证计价；WBS侧关键单点复核（CI/CD搭建4人天、CC迁移演练10.5人天、系统测试全量2人天）均可完成。" % n_subs, False),
     ("· 人×日历匹配（拆解直估÷%d，仅本表口径）：Wade %s＝%.0f%%；DevB %s＝%.0f%%⚠超出日历%.1f人天；Mandy三职直估%s＝%.0f%%（折算≈%s＝%.0f%%）；PM Mark 15。全口径（含环节102人天，见WBS分解V2.0）：Wade 80.5／DevB 104／Mandy 98，窗口134工作日/人，均可容纳。" % (CAL, gt[1], gt[1] / CAL * 100, gt[2], gt[2] / CAL * 100, gt[2] - CAL, mandy_g2, mandy_g2 / CAL * 100, mandy_adj, mandy_adj / CAL * 100), False),
-    ("· 可完成性结论（V2.0）：直估如实排期、不折算AI提效——总量297.5人天已整体后延重排进WBS分解V2.0（交付2027/3/24，每人134工作日），无需三前提即可完成；上述折算三前提（DevB×0.85兑现/Wade零缓冲依赖N5 AI成文/Mandy AI用例9/30落地）仅在选择压回2026/12/16时适用。" , False),
+    ("· 可完成性结论（V2.1已排定）：直估297.5经AI执行系数折算+并行化（测试左移/SLC滚动/治理持续/演练并行）+瓶颈迁移（8项移Wade）后=214.3人天/73工作日，交付2026/12/31；前提为AI生成有效落地（ETL/用例/文档），已纳入风险跟踪。" , False),
     ("· B计划（若选择压回12/16且提效不达标时的按序降级清单）：F01-02离线介质登记→上线后首月补充；F05-05预览降级为PDF/图片两类（Office转换延后）；F03-01 VACUUM物理清除→上线后首个运维窗口执行。", False),
+    ("· V2.1执行排期（已采纳）：直估297.5×AI执行系数=214.3人天/73工作日，交付2026/12/31（M1=9/22/M2=9/30/M3=11/5/M4=12/16/M6=12/17/M5=12/25/M7=12/31）；系数按AI参与方式分档（生成×0.65/辅助×0.75/自动化×0.9/人工×1.0/测试左移×0.60）；测试左移+SLC滚动成稿+N2持续治理+CC演练并行化；DevB瓶颈经8项应用/中间件任务移Wade化解，增量接入与复盘文档移上线后。详见WBS分解V2.1。", False),
 ]
 rr2 += 1  # 空一行
 for text, bold in rv:

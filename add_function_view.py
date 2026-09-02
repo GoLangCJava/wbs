@@ -50,29 +50,13 @@ for r in range(3, wst.max_row + 1):
                      str(wst.cell(r, 7).value), str(wst.cell(r, 11).value)))
 assert len(FMAP) == 26
 
-# ---------- 直估口径：功能人天取自 func_breakdown ----------
-_src = open("/home/user/wbs/func_breakdown.py", encoding="utf-8").read()
-_ns = {}
-for _n in ast.parse(_src).body:
-    if isinstance(_n, ast.Assign) and getattr(_n.targets[0], "id", "") in ("B", "SLC_BY_GRP"):
-        exec(compile(ast.Module([_n], []), "<x>", "exec"), _ns)
-_FB, _SLC = _ns["B"], _ns["SLC_BY_GRP"]
+# ---------- V2.1：功能行人天直接取自 WBS分解 排期值（直估×AI执行系数后） ----------
 FEATSUM = {}
-for _fc, _subs in _FB:
-    FEATSUM[_fc] = dict(BA=round(sum(x[2] for x in _subs), 2), Wade=round(sum(x[3] for x in _subs), 2),
-                        DevB=round(sum(x[4] for x in _subs), 2), 测试=round(sum(x[5] for x in _subs), 2),
-                        文档=round(_SLC.get(_fc, 0), 2))
-dev_alloc = {f[0]: {"Wade": FEATSUM[f[0]]["Wade"], "DevB": FEATSUM[f[0]]["DevB"]} for f in FMAP if f[0] in FEATSUM}
-m_alloc = {f[0]: {"BA": FEATSUM[f[0]]["BA"], "测试": FEATSUM[f[0]]["测试"], "文档": FEATSUM[f[0]]["文档"]}
-           for f in FMAP if f[0] in FEATSUM}
-# 与WBS功能组对账（组编码 <-> 直估，双保险）
 for f in FMAP:
     fc, _, grp, _ = f
-    if fc in FEATSUM and grp.replace(".", "").isdigit():
-        for role in ("Wade", "DevB"):
-            assert gsum([grp], role) == FEATSUM[fc][role], (fc, role, gsum([grp], role), FEATSUM[fc][role])
-        _m = gsum([grp], "BA") + gsum([grp], "测试") + gsum([grp], "文档")
-        assert _m == round(FEATSUM[fc]["BA"] + FEATSUM[fc]["测试"] + FEATSUM[fc]["文档"], 2), (fc, "Mandy", _m)
+    if grp.replace(".", "").isdigit():
+        FEATSUM[fc] = dict(BA=gsum([grp], "BA"), Wade=gsum([grp], "Wade"), DevB=gsum([grp], "DevB"),
+                           测试=gsum([grp], "测试"), 文档=gsum([grp], "文档"))
 
 # ---------- 公共支撑（挂新WBS组编码） ----------
 PUBLIC = [
@@ -84,12 +68,12 @@ PUBLIC = [
   {"Wade": "UC权限与查询模型/资源验收/架构终稿/外部评审#1/M2", "DevB": "四层表结构/DDL/分层设计/迁移方案/非功能设计"}),
  ("G4", "样本数据与MVP评审", {"Wade": ["4.13"], "测试": ["4.13"]},
   {"Wade": "样本端到端联调M3", "测试": "样本数据集/M3评审支持"}),
- ("G5", "集成、质量治理与CC迁移演练", {"Wade": ["6.1", "6.2", "6.5"], "DevB": ["6.1", "6.3", "5.15"], "测试": ["6.1", "6.4", "5.15"], "文档": ["6.1"]},
-  {"Wade": "N2治理A侧/集成联调/CC适配/缺陷收敛/冻结M5", "DevB": "N2治理B侧/CC迁移演练/对账报告/增量接入框架", "测试": "质量抽检/26项核对/系统测试轮1/UAT准备/M4", "文档": "质量治理SLC"}),
+ ("G5", "集成、质量治理与CC迁移演练", {"Wade": ["6.1", "6.2", "6.5"], "DevB": ["6.1", "6.3", "5.15"], "测试": ["6.1", "6.4", "5.15"], "文档": ["6.1"], "PM": ["6.5"]},
+  {"Wade": "N2治理A侧/集成联调/CC适配/缺陷收敛", "DevB": "N2治理B侧/CC迁移演练/对账报告/增量接入框架", "测试": "质量抽检/26项核对/系统测试轮1/UAT准备/M4", "文档": "质量治理SLC", "PM": "冻结与就绪评审M5"}),
  ("G6", "系统测试与UAT", {"测试": ["7.1"], "文档": ["7.1"]},
   {"测试": "全量测试/缺陷回归/UAT组织M6", "文档": "测试报告+UAT报告+SLC合稿定稿"}),
- ("G7", "非功能专项与全局实现、开发侧文档", {"Wade": ["5.14", "7.2", "7.3"], "DevB": ["5.14", "7.2", "7.3"], "BA": ["5.14"], "测试": ["5.14"], "文档": ["7.3"]},
-  {"Wade": "N3前端性能/鉴权掩码前端/专项与就绪评审/N5架构接口文档", "DevB": "N3数据性能/可观测/容量/迁移预跑/安全专项/N5数据文档", "BA": "鉴权掩码策略澄清", "测试": "N3专项用例", "文档": "N5合稿评审"}),
+ ("G7", "非功能专项与全局实现、开发侧文档", {"Wade": ["5.14", "7.2", "7.3"], "DevB": ["5.14", "7.2", "7.3"], "BA": ["5.14"], "测试": ["5.14"], "文档": ["7.3"], "PM": ["7.2"]},
+  {"Wade": "N3前端性能/鉴权掩码前端/专项/N5架构接口文档", "DevB": "N3数据性能/可观测/容量/迁移预跑/安全专项/N5数据文档", "BA": "鉴权掩码策略澄清", "测试": "N3专项用例", "文档": "N5合稿评审", "PM": "生产就绪评审"}),
  ("G8", "部署上线与交付", {"Wade": ["8.1", "8.2"], "DevB": ["8.1", "8.2"], "BA": ["8.2"], "测试": ["8.2"], "文档": ["8.2"], "PM": ["8.2"]},
   {"Wade": "生产部署/上线验证/值守交接应用侧", "DevB": "CC全量迁移/作业启动/值守交接数据侧", "BA": "上线首日支持/业务确认", "测试": "上线Checklist", "文档": "部署运维SLC/复盘", "PM": "交付确认M7"}),
  ("G9", "项目管理（Mark）", {"PM": ["1"], "文档": ["1.2"]},
@@ -147,7 +131,7 @@ if "功能视角分解" in wb.sheetnames:
 wsg = wb.create_sheet("功能视角分解", wb.sheetnames.index("26项功能覆盖对照") + 1)
 wsg.sheet_properties.tabColor = "C00000"
 wsg.merge_cells("A1:P1")
-wsg["A1"] = "功能视角分解（功能×角色矩阵）· V2.0直估：每个功能由谁做什么、投入多少人天 — 与WBS分解V2.0完全对账（合计297.5人天）"
+wsg["A1"] = "功能视角分解（功能×角色矩阵）· V2.1排期口径（直估×AI执行系数）：每个功能由谁做什么 — 与WBS分解V2.1完全对账（合计212.3人天，窗口至2026/12/31）"
 wsg["A1"].font = F_TITLE; wsg["A1"].fill = FILL_NAVY; wsg["A1"].alignment = CENTER
 wsg.row_dimensions[1].height = 26
 GH = ["功能编号", "模块", "具体功能（与源文件一致）",
@@ -215,9 +199,9 @@ for i, v in enumerate(labels, 1):
 wsg.freeze_panes = "D3"
 wsg.auto_filter.ref = "A2:P" + str(rg)
 note = wsg.cell(row=rg + 1, column=1,
-    value="V2.0直估对账：Mandy三职 %s（BA %s + 测试 %s + 文档 %s）+ Wade %s + DevB %s + PM 15 = %s人天，与「WBS分解」V2.0完全一致；"
-          "功能行人天=「功能拆解估算」直估原值，公共支撑行=新WBS组编码实时汇总；交付日2027/3/24（直估不折算整体后延）"
-          % (mandy_tot, tot_cols["BA"], tot_cols["测试"], tot_cols["文档"], tot_cols["Wade"], tot_cols["DevB"], grand))
+    value="V2.1排期对账：Mandy三职 %s（BA %s + 测试 %s + 文档 %s）+ Wade %s + DevB %s + PM %s = %s人天，与「WBS分解」V2.1完全一致；"
+          "全部人天=「功能拆解估算」直估×AI执行系数（AI生成×0.65/AI辅助×0.75/自动化×0.9/人工×1.0，测试左移×0.60）；直估原值297.5见拆解估算页；交付2026/12/31"
+          % (mandy_tot, tot_cols["BA"], tot_cols["测试"], tot_cols["文档"], tot_cols["Wade"], tot_cols["DevB"], tot_cols["PM"], grand))
 note.font = Font(italic=True, size=9, color="C00000")
 
 # 与WBS分解动态对账（强断言）
@@ -227,7 +211,7 @@ for r in range(4, wsx.max_row + 1):
     if wsx.cell(r, 3).value == 3 and isinstance(wsx.cell(r, 9).value, (int, float)):
         o = wsx.cell(r, 5).value
         wbs_tot[o] = round(wbs_tot.get(o, 0) + wsx.cell(r, 9).value, 2)
-assert tot_cols["Wade"] == wbs_tot.get("Wade") and tot_cols["DevB"] == wbs_tot.get("DevB"), (tot_cols, wbs_tot)
+assert round(tot_cols["Wade"],2) == wbs_tot.get("Wade") and round(tot_cols["DevB"],2) == wbs_tot.get("DevB"), (tot_cols, wbs_tot)
 if mandy_tot != wbs_tot.get("Mandy"):
     _cap = set()
     for _g in PUBLIC:
@@ -238,7 +222,7 @@ if mandy_tot != wbs_tot.get("Mandy"):
                         _cap.add(code)
     _lost = [(c, n[:26], e) for c, o, e, _x, n in LEAVES if o == "Mandy" and c not in _cap]
     raise AssertionError(f"Mandy对账失败 {mandy_tot} vs {wbs_tot.get('Mandy')}，漏捕: {_lost}")
-assert tot_cols["PM"] == 15, tot_cols
+assert round(tot_cols["PM"],2) == wbs_tot.get("Mark"), tot_cols
 assert grand == round(sum(wbs_tot.values()), 2), (grand, wbs_tot)
 
 # 使用说明（幂等覆盖）
