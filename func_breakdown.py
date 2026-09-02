@@ -241,7 +241,7 @@ for gcode, mname, gname, subs, fill in SECTIONS:
     r0 = r
     for n, (name, desc, ba, wa, db, te, sl) in enumerate(subs, 1):
         vals = [f"{gcode}-{n}", None, None, name, desc, ba or None, wa or None, db or None, te or None, None,
-                round(ba + wa + db + te, 2)]
+                f"=ROUND(SUM(F{r}:I{r}),2)"]
         for i, v in enumerate(vals, 1):
             c = wsn.cell(row=r, column=i, value=v); c.border = BORDER
             c.alignment = CENTER if i in (1, 6, 7, 8, 9, 10, 11) else Alignment(wrap_text=True, vertical="center")
@@ -258,7 +258,7 @@ for gcode, mname, gname, subs, fill in SECTIONS:
     wsn.merge_cells(start_row=r0, start_column=12, end_row=r1, end_column=12)
     gs = [round(sum(s[i] for s in subs), 2) for i in range(2, 6)]
     slc = SLC_BY_GRP.get(gcode, 0)
-    cK = wsn.cell(row=r0, column=12, value=round(sum(gs) + slc, 2))
+    cK = wsn.cell(row=r0, column=12, value=f"=ROUND(SUM(F{r0}:I{r1})+J{r0},2)")
     cK.font = F_L1; cK.fill = fill; cK.alignment = CENTER; cK.number_format = "0.##"
     wsn.merge_cells(start_row=r0, start_column=10, end_row=r1, end_column=10)
     cJ = wsn.cell(row=r0, column=10, value=slc or None)
@@ -287,9 +287,11 @@ while i < len(sec_rows):
     cM.alignment = Alignment(wrap_text=True, vertical="center", horizontal="center")
     i = j + 1
 
+_last = r - 1
 labels = ["", "总计", "", f"{len(B)}项功能×{sum(len(s[1]) for s in B)}子任务 + 非功能工程×{sum(len(s[2]) for s in N)}子任务（F04-04=Azure原生能力，不计开发）",
           "独立直估（另含少量需求/PM等工作未列入本表）",
-          gt[0], gt[1], gt[2], gt[3], gt[4], round(sum(gt), 2), ""]
+          f"=ROUND(SUM(F3:F{_last}),2)", f"=ROUND(SUM(G3:G{_last}),2)", f"=ROUND(SUM(H3:H{_last}),2)",
+          f"=ROUND(SUM(I3:I{_last}),2)", f"=ROUND(SUM(J3:J{_last}),2)", f"=ROUND(SUM(F{r}:J{r}),2)", ""]
 for i, v in enumerate(labels, 1):
     c = wsn.cell(row=r, column=i, value=v); c.border = BORDER; c.fill = FILL_L1; c.font = F_L1
     c.alignment = CENTER if i not in (4, 5) else Alignment(horizontal="left", vertical="center")

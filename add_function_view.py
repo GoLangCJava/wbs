@@ -201,7 +201,7 @@ for fcode, fname, main_w, coop_w, walk_w in FMAP:
     vals = [fcode, MOD_NAME[fcode[:3]], fname,
             ba, ev["BA"] or None, wa, ev["Wade"] or None, db, ev["DevB"] or None,
             te, ev["测试"] or None, do, ev["文档"] or None,
-            round(sum(ev.values()), 2),
+            f"=ROUND(E{rg}+G{rg}+I{rg}+K{rg}+M{rg},2)",
             main_w + (";" + coop if coop else "") + (";" + ";".join(EXTRA_WBS.get(fcode, [])) if EXTRA_WBS.get(fcode) else ""),
             max(_d(by_wbs[c]["e"]) for c in [main_w, coop, walk_w] + EXTRA_WBS.get(fcode, []) if c).strftime("%m/%d")]
     fill = PatternFill("solid", fgColor=_mod_fills[fcode[:3]])
@@ -221,7 +221,8 @@ for gid, gname, cols, desc in PUBLIC:
             desc.get("BA", "—"), sums.get("BA") or None, desc.get("Wade", "—"), sums.get("Wade") or None,
             desc.get("DevB", "—"), sums.get("DevB") or None, desc.get("测试", "—"), sums.get("测试") or None,
             desc.get("文档", "—"), sums.get("文档") or None,
-            round(sum(sums.values()), 2), ",".join(all_codes[:4]) + ("…" if len(all_codes) > 4 else ""),
+            (f"=ROUND(E{rg}+G{rg}+I{rg}+K{rg}+M{rg}+{sums.get('PM', 0)},2)" if sums.get("PM") else f"=ROUND(E{rg}+G{rg}+I{rg}+K{rg}+M{rg},2)"),
+            ",".join(all_codes[:4]) + ("…" if len(all_codes) > 4 else ""),
             max(_d(by_wbs[c]["e"]) for c in all_codes).strftime("%m/%d")]
     for i, v in enumerate(vals, 1):
         c = wsg.cell(row=rg, column=i, value=v); c.border = BORDER; c.fill = FILL_G
@@ -235,9 +236,12 @@ grand = round(sum(tot_cols[k] for k in ("BA", "Wade", "DevB", "测试", "文档"
 mandy_tot = round(tot_cols["BA"] + tot_cols["测试"] + tot_cols["文档"], 2)
 assert grand == 185 and tot_cols["Wade"] == 60 and tot_cols["DevB"] == 60, f"对账失败 {tot_cols} grand={grand}"
 assert mandy_tot == 50, f"Mandy对账失败 {mandy_tot}"
+_last = rg - 1
 labels = ["合计", "", "26项功能 + 9类公共支撑",
-          "Mandy·BA", tot_cols["BA"], "Wade（开发A）", tot_cols["Wade"], "DevB（开发B）", tot_cols["DevB"],
-          "Mandy·测试", tot_cols["测试"], "Mandy·文档", tot_cols["文档"], grand, "", "PM Mark " + str(tot_cols["PM"])]
+          "Mandy·BA", "=ROUND(SUM(E3:E%d),2)" % _last, "Wade（开发A）", "=ROUND(SUM(G3:G%d),2)" % _last,
+          "DevB（开发B）", "=ROUND(SUM(I3:I%d),2)" % _last,
+          "Mandy·测试", "=ROUND(SUM(K3:K%d),2)" % _last, "Mandy·文档", "=ROUND(SUM(M3:M%d),2)" % _last,
+          "=ROUND(SUM(N3:N%d),2)" % _last, "", "PM Mark " + str(tot_cols["PM"])]
 for i, v in enumerate(labels, 1):
     c = wsg.cell(row=rg, column=i, value=v); c.border = BORDER; c.fill = FILL_L1; c.font = F_L1
     c.alignment = CENTER
