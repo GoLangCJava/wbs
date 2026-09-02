@@ -164,7 +164,23 @@ N = [
  ("部署预演与回退预案", "Staging完整演练、回退验证", 0, 1, .5, .25, 0),
  ("上线值守与运维交接", "上线窗口值守、运维交接与培训材料", 0, 1, 1, 0, .25),
 ]),
+("N5", "【非功能】开发侧文档（架构/设计/接口）", [
+ ("架构与总体设计文档", "架构图/部署视图/ADR汇编成文（Wade提供）", 0, 1.5, 0, 0, 0),
+ ("应用接口与模块设计文档", "OpenAPI导出+模块设计说明（Wade提供）", 0, 1, 0, 0, 0),
+ ("数据设计与ETL/作业文档", "分层设计/数据字典/ETL与作业说明（DevB提供）", 0, 0, 2, 0, 0),
+]),
 ]
+
+# ---------- SLC按功能/组级预估（不细到子任务；开发侧文档见N5） ----------
+SLC_BY_GRP = {
+ "F01-01": 1.0, "F01-02": .5, "F01-03": .5, "F01-04": .5, "F01-05": .5,
+ "F02-01": .5, "F02-02": .5, "F03-01": .5, "F03-02": .5,
+ "F04-01": .5, "F04-02": .5, "F04-03": .5,
+ "F05-01": .5, "F05-02": .25, "F05-03": .25, "F05-04": .5, "F05-05": .5,
+ "F06-01": .5, "F06-02": .25, "F06-03": .25,
+ "F08-01": 1.0, "F08-02": .5, "F08-03": .5, "F08-04": .25, "F08-05": .25,
+ "N1": .5, "N2": .25, "N3": 0, "N4": .5, "N5": .5,
+}
 
 # ---------- 功能名（读覆盖对照页） ----------
 wst = wb["26项功能覆盖对照"]
@@ -205,7 +221,7 @@ wsn["A1"] = (f"功能拆解估算（子任务级直估）：模块→功能→�
              f" + 非功能与工程支撑×{sum(len(s[2]) for s in N)}子任务（F04-04异地灾备=Azure Blob原生能力，不计开发）— 独立估算，不锚定排期185人天")
 wsn["A1"].font = F_TITLE; wsn["A1"].fill = FILL_NAVY; wsn["A1"].alignment = CENTER
 wsn.row_dimensions[1].height = 26
-GH = ["子任务编号", "模块", "功能/组名称", "子任务/工作包", "工作内容要点", "BA人天", "开发A·Wade", "开发B·DevB", "测试人天", "SLC文档", "小计", "功能/组小计"]
+GH = ["子任务编号", "模块", "功能/组名称", "子任务/工作包", "工作内容要点", "BA人天", "开发A·Wade", "开发B·DevB", "测试人天", "SLC人天（按功能）", "小计", "功能/组小计"]
 GW = [11, 17, 19, 22, 40, 8, 10, 10, 8, 8, 8, 9]
 for i, (h, w) in enumerate(zip(GH, GW), 1):
     wsn.column_dimensions[get_column_letter(i)].width = w
@@ -224,8 +240,8 @@ for gcode, mname, gname, subs, fill in SECTIONS:
     is_nfr = gcode.startswith("N")
     r0 = r
     for n, (name, desc, ba, wa, db, te, sl) in enumerate(subs, 1):
-        vals = [f"{gcode}-{n}", None, None, name, desc, ba or None, wa or None, db or None, te or None, sl or None,
-                round(ba + wa + db + te + sl, 2)]
+        vals = [f"{gcode}-{n}", None, None, name, desc, ba or None, wa or None, db or None, te or None, None,
+                round(ba + wa + db + te, 2)]
         for i, v in enumerate(vals, 1):
             c = wsn.cell(row=r, column=i, value=v); c.border = BORDER
             c.alignment = CENTER if i in (1, 6, 7, 8, 9, 10, 11) else Alignment(wrap_text=True, vertical="center")
@@ -240,16 +256,22 @@ for gcode, mname, gname, subs, fill in SECTIONS:
     cB.font = F_L1; cB.fill = fill
     cB.alignment = Alignment(wrap_text=True, vertical="center", horizontal="left")
     wsn.merge_cells(start_row=r0, start_column=12, end_row=r1, end_column=12)
-    gs = [round(sum(s[i] for s in subs), 2) for i in range(2, 7)]
-    cK = wsn.cell(row=r0, column=12, value=round(sum(gs), 2))
+    gs = [round(sum(s[i] for s in subs), 2) for i in range(2, 6)]
+    slc = SLC_BY_GRP.get(gcode, 0)
+    cK = wsn.cell(row=r0, column=12, value=round(sum(gs) + slc, 2))
     cK.font = F_L1; cK.fill = fill; cK.alignment = CENTER; cK.number_format = "0.##"
+    wsn.merge_cells(start_row=r0, start_column=10, end_row=r1, end_column=10)
+    cJ = wsn.cell(row=r0, column=10, value=slc or None)
+    cJ.font = F_L1; cJ.fill = fill; cJ.alignment = CENTER; cJ.number_format = "0.##"
     for rr in range(r0, r1 + 1):
-        for col in (2, 3, 12):
+        for col in (2, 3, 10, 12):
             wsn.cell(row=rr, column=col).border = BORDER
     sec_rows.append((mname, r0, r1, fill))
-    for i in range(5):
+    for i in range(4):
         gt[i] += gs[i]
         (nfr_tot if is_nfr else feat_tot)[i] += gs[i]
+    gt[4] += slc
+    (nfr_tot if is_nfr else feat_tot)[4] += slc
 
 # 模块列（B列）：按模块跨功能合并
 i = 0
@@ -300,12 +322,12 @@ wsn.row_dimensions[r + 2].height = 56
 
 # AI Native提效折算对照（直估→计划的吸收路径）
 mandy_g = round(gt[0] + gt[3] + gt[4], 2)
-mandy_adj = round(gt[0] + gt[3] * 0.65 + gt[4] * 0.6, 2)
+mandy_adj = round(gt[0] + gt[3] * 0.65 + gt[4] * 0.8, 2)
 devb_adj = round(gt[2] * 0.85, 2)
 _lines = [
     ("AI Native提效折算对照（直估→计划185的吸收路径）：", True),
-    ("· Mandy：直估 %s（BA %s + 测试 %s + SLC %s）→ 测试×0.65（AI生成用例+人工审校执行）、SLC×0.6（AI反生成+人工润色）、BA不折减 → ≈%s ≈ 计划50 ✓" % (mandy_g, gt[0], gt[3], gt[4], mandy_adj), False),
-    ("· Wade：直估 %s → 无需折减 → 计划60，余 %s 缓冲 ✓" % (gt[1], round(60 - gt[1], 2)), False),
+    ("· Mandy：直估 %s（BA %s + 测试 %s + SLC %s，SLC已按功能级预估且开发侧文档移至N5）→ 测试×0.65（AI生成用例+人工审校执行）、SLC×0.8（合稿评审）、BA不折减 → ≈%s ≈ 计划50 ✓" % (mandy_g, gt[0], gt[3], gt[4], mandy_adj), False),
+    ("· Wade：直估 %s（含N5开发侧文档2.5）≈ 计划60，基本持平 ✓" % (gt[1],), False),
     ("· DevB：直估 %s → ETL/SQL/作业配置AI生成×0.85 → ≈%s ≈ 计划60 ✓（最大风险假设：AI生成ETL需有效落地，纳入风险跟踪）" % (gt[2], devb_adj), False),
     ("· 合计：直估 %s → 折算 ≈%s + PM 15 = %s ≤ 185，余 ≈%s 人天缓冲；若提效不达标，启用备用赶工日（9/20、10/10）" % (grand, round(gt[1] + mandy_adj + devb_adj, 2), round(gt[1] + mandy_adj + devb_adj + 15, 2), round(185 - gt[1] - mandy_adj - devb_adj - 15, 2)), False),
 ]
