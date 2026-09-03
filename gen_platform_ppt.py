@@ -267,7 +267,166 @@ def slide_mfe(prs):
         sz=6.4, c=MUT, align='c')
 
 
-# ------------------------------------------------------------------- build --
+# ================================ P3 · 总览架构图（依据 archi.jpeg 原图重绘） =
+def slide_archi(prs):
+    sl = prs.slides.add_slide(prs.slide_layouts[6]); _cur['i'] = 2
+    sl.background.fill.solid(); sl.background.fill.fore_color.rgb = RGBColor.from_string(BG)
+    title_bar(sl, 'One-Abbott Shared Application Platform · 技术架构图',
+              '微前端 ＋ 共享能力中心 ＋ HCP Pool\n实现一次构建 · 多 BU 复用', AZ)
+
+    LBX, LBW = 0.22, 0.94         # 左侧层标签
+    CX, CW = 1.24, 10.18          # 主内容区
+    RX, RW = 11.52, 1.59          # 右侧价值栏
+
+    def band(y, h, fill, bl, cjk, en=None, tc=INK, ec=MUT):
+        rect(sl, LBX, y, LBW + 0.04 + CW, h, fill, bl, 1.2, 0.07)
+        paras = [(cjk, {'sz': 7.0, 'b': True, 'c': tc})]
+        if en:
+            paras.append((en, {'sz': 4.8, 'c': ec}))
+        txt(sl, LBX + 0.06, y, LBW - 0.06, h, paras, align='c', anchor='m', leading=1.15)
+
+    # ---------- 01 渠道接入层 ----------
+    band(0.62, 0.40, L_GRN, B_GRN, '渠道接入层', tc=GRND)
+    chs = ['微信公众号', '微信小程序', '企业微信', 'H5', 'Mobile App', 'PC Portal', 'CAM', 'CRM/其他系统']
+    for i, s in enumerate(chs):
+        chip(sl, CX + i * 1.283, 0.72, 1.235, 0.20, s, None, 'FFFFFF', 'BBF7D0', 1.0, 0.04,
+             tc=INK, tsz=6.4)
+    # ---------- 02 One-Abbott Portal ----------
+    rect(sl, CX, 1.08, CW, 0.24, L_BLUE, B_BLUE, 1.2, 0.05)
+    txt(sl, CX, 1.08, CW, 0.24, 'One-Abbott Portal（统一入口）', sz=7.5, b=True, c='1D4ED8',
+        align='c', anchor='m')
+    # ---------- 03 统一接入层 ----------
+    band(1.38, 0.50, 'F8FAFC', 'CBD5E1', '统一接入层', tc=SUB)
+    acc = [('OneID/SSO', '统一身份认证'), ('API Gateway', '统一 API 网关'), ('权限中心', 'RBAC / ABAC'),
+           ('消息中心', '站内信 / 通知'), ('搜索中心', '全局搜索服务'), ('个性化中心', '用户偏好 / 配置')]
+    for i, (t, s) in enumerate(acc):
+        chip(sl, CX + i * 1.715, 1.52, 1.665, 0.30, t, s, 'FFFFFF', 'CBD5E1', 1.1, 0.05,
+             tc=INK, tsz=6.8, sc=MUT, ssz=5.8)
+    # ---------- 04 微前端应用层 ----------
+    band(1.96, 1.54, L_CYN, B_CYNB, '微前端应用层', 'Micro Frontend', tc=CYND)
+    txt(sl, CX, 2.02, CW, 0.14, 'Micro Frontend（微前端）· 按需组合，灵活装配', sz=6.8, b=True,
+        c=CYND, align='c')
+    mfs = [
+        ('Product MF', '产品中心', ['·产品介绍', '·资料下载', '·试剂速查'], 'FFFFFF', CYN),
+        ('Content MF', '学术中心', ['·文献库', '·学术内容', '·培训课程'], 'FFFFFF', CYN),
+        ('Event MF', '会议中心', ['·会议管理', '·直播/录播', '·报名/签到'], 'FFFFFF', CYN),
+        ('Sales MF', '销售中心', ['·拜访管理', '·客户规划', '·绩效目标'], 'FFFFFF', CYN),
+        ('Service MF', '服务中心', ['·报修工单', '·现场服务', '·巡检管理'], 'FFFFFF', CYN),
+        ('HCP MF', '客户 360', ['·HCP360 视图', '·互动轨迹', '·标签画像'], 'FFFFFF', CYN),
+        ('AI MF', 'AI 助手', ['·智能问答', '·内容推荐', '·运营助手'], 'FFFFFF', CYN),
+        ('Plugin MF', '插件扩展', ['·术后随访', '·医学咨询', '·竞品情报'], 'FDF2F8', 'F9A8D4'),
+    ]
+    for i, (t, sub, bl, lf, blc) in enumerate(mfs):
+        mx = CX + i * 1.283
+        rect(sl, mx, 2.20, 1.235, 0.96, lf, blc, 1.2, 0.05, shadow=True)
+        tc = 'BE185D' if lf == 'FDF2F8' else CYND
+        txt(sl, mx + 0.04, 2.235, 1.155, 0.12, t, sz=5.8, b=True, c=tc, align='c')
+        txt(sl, mx + 0.04, 2.375, 1.155, 0.14, sub, sz=6.6, b=True, c=INK, align='c')
+        for j, s in enumerate(bl):
+            txt(sl, mx + 0.06, 2.55 + j * 0.155, 1.115, 0.14, s, sz=5.4, c=MUT, align='c')
+    chip(sl, CX, 3.22, 5.60, 0.22, '微前端框架：React + Module Federation / Single-SPA', None,
+         'FFFFFF', CYN, 1.1, 0.04, tc=CYND, tsz=6.2)
+    chip(sl, CX + 5.70, 3.22, 4.48, 0.22, 'UI 组件库 & Design System', None,
+         'FFFFFF', CYN, 1.1, 0.04, tc=CYND, tsz=6.2)
+    # ---------- 05 共享能力中心 ----------
+    band(3.58, 1.34, 'FFFFFF', BORDER, '共享能力中心', 'Capability Hub', tc=INK)
+    hubs = [
+        ('内容能力中心', '(Content Hub)', ['·CMS 内容管理', '·文献管理', '·文件管理', '·内容审核发布'], L_BLUE, B_BLUE, AZD),
+        ('活动能力中心', '(Event Hub)', ['·会议管理', '·直播/录播', '·报名/签到', '·CME 学分/积分'], L_GRN, B_GRN, GRND),
+        ('销售能力中心', '(Sales Hub)', ['·客户管理', '·拜访管理', '·协访管理', '·KPI/绩效'], L_AMB, B_AMB, AMBD),
+        ('服务能力中心', '(Service Hub)', ['·工单管理', '·SLA 管理', '·派工调度', '·备件管理'], 'F6F8FA', 'CBD5E1', SLA),
+        ('客户数据能力中心', '(Customer Data Hub)', ['·客户主数据', '·客户 360', '·标签引擎', '·行为分析'], L_CYN, B_CYN, CYND),
+        ('AI 能力中心', '(AI Hub)', ['·AI 问答（RAG）', '·内容推荐', '·合规审查', '·智能预测'], L_PUR, B_PUR, PURD),
+        ('Plugin 容器', '(Plugin Container)', ['·插件市场', '·插件管理', '·插件运行时', '·OpenAPI / SDK'], 'FDF2F8', 'F9A8D4', 'BE185D'),
+    ]
+    for i, (t, en, items, lf, bl, tc) in enumerate(hubs):
+        hx = CX + i * 1.467
+        rect(sl, hx, 3.66, 1.42, 1.18, lf, bl, 1.2, 0.05, shadow=True)
+        txt(sl, hx + 0.03, 3.70, 1.36, 0.13, t, sz=6.4, b=True, c=INK, align='c')
+        txt(sl, hx + 0.03, 3.85, 1.36, 0.11, en, sz=4.8, b=True, c=tc, align='c')
+        for j, s in enumerate(items):
+            txt(sl, hx + 0.05, 4.02 + j * 0.165, 1.32, 0.14, s, sz=5.4, c=MUT, align='c')
+    # ---------- 06 平台基础层 ----------
+    band(4.98, 0.46, L_PUR, B_PUR, '平台基础层', 'Platform Foundation', tc=PURD)
+    plats = [('身份与访问管理', 'Entra ID / B2C'), ('API 管理', 'Azure API Management'),
+             ('消息总线', 'Service Bus / Event Hub'), ('配置中心', 'App Configuration'),
+             ('日志与审计', 'Log & Audit'), ('文件存储', 'Blob Storage'),
+             ('监控告警', 'Application Insights')]
+    for i, (t, s) in enumerate(plats):
+        chip(sl, CX + i * 1.467, 5.08, 1.42, 0.28, t, s, 'FFFFFF', B_PUR, 1.1, 0.04,
+             tc=INK, tsz=6.2, sc=MUT, ssz=5.0)
+    # ---------- 07 数据底座层 ----------
+    band(5.50, 0.80, L_BLUE, B_BLUE, '数据底座层', 'HCP Pool', tc='1D4ED8')
+    rect(sl, CX, 5.58, 6.34, 0.66, 'FFFFFF', '93C5FD', 1.1, 0.05)
+    txt(sl, CX + 0.08, 5.61, 6.18, 0.12, 'HCP Pool（统一数据资产）', sz=6.0, b=True, c='1D4ED8')
+    hcp1 = [('OneID', '统一身份'), ('HCP Master', '客户主数据'), ('HCO Master', '机构主数据'),
+            ('Consent', '授权管理')]
+    for i, (t, s) in enumerate(hcp1):
+        chip(sl, CX + 0.08 + i * 1.56, 5.76, 1.50, 0.22, [(t + '　', {'sz': 5.8, 'b': True, 'c': INK}),
+                                                           (s, {'sz': 5.2, 'c': MUT})],
+             None, 'F0F7FC', B_BLUE, 1.0, 0.04)
+    hcp2 = [('Customer 360', ''), ('Tag Engine', '标签引擎'), ('Behavior Event', '行为事件中心')]
+    xx = CX + 0.08
+    for t, s in hcp2:
+        runs = [(t, {'sz': 5.8, 'b': True, 'c': INK})]
+        if s:
+            runs.append(('　' + s, {'sz': 5.2, 'c': MUT}))
+        chip(sl, xx, 6.00, 2.02 if s else 1.30, 0.20, runs, None, 'F0F7FC', B_BLUE, 1.0, 0.04)
+        xx += (2.02 if s else 1.30) + 0.10
+    rect(sl, CX + 6.44, 5.58, 3.74, 0.66, 'FFFFFF', '93C5FD', 1.1, 0.05)
+    txt(sl, CX + 6.52, 5.61, 3.58, 0.12, '数据集成与治理（Data Integration & Governance）', sz=5.6, b=True, c='1D4ED8')
+    gov = [('数据集成', 'Data Factory'), ('数据质量', 'Data Quality'),
+           ('数据治理', 'Data Governance'), ('元数据管理', 'Metadata')]
+    for i, (t, s) in enumerate(gov):
+        chip(sl, CX + 6.52 + (i % 2) * 1.82, 5.76 + (i // 2) * 0.24, 1.76, 0.20,
+             [(t + '　', {'sz': 5.6, 'b': True, 'c': INK}), (s, {'sz': 4.8, 'c': MUT})],
+             None, 'F0F7FC', B_BLUE, 1.0, 0.04)
+    # ---------- 08 数据与 AI 平台 ----------
+    band(6.36, 0.46, 'FAF9FF', B_PUR, '数据与 AI 平台', 'Data & AI Platform', tc=PURD)
+    dai = [('数据湖仓', 'Data Lake · ADLS Gen2', L_BLUE, B_BLUE, AZD),
+           ('数据处理', 'Databricks · ETL/ELT', L_GRN, B_GRN, GRND),
+           ('AI 搜索', 'Azure AI Search · 全文/向量检索', L_CYN, B_CYN, CYND),
+           ('AI 平台', 'Azure OpenAI · GPT/RAG/Prompt', L_PUR, B_PUR, PURD),
+           ('数据分析', 'Microsoft Fabric · 建模/分析/共享', L_BLUE, B_BLUE, AZD),
+           ('可视化', 'Power BI · 报表/仪表盘', L_AMB, B_AMB, AMBD)]
+    for i, (t, s, lf, bl, tc) in enumerate(dai):
+        chip(sl, CX + i * 1.715, 6.46, 1.665, 0.28, t, s, lf, bl, 1.1, 0.04, tc=INK, tsz=6.4,
+             sc=MUT, ssz=5.0)
+    # ---------- 09 外部系统对接 ----------
+    band(6.88, 0.34, 'FFF7ED', 'FED7AA', '外部系统对接', tc='B45309')
+    exts = ['ERP', 'SAP', 'CRM', 'MDM', 'EHR', 'BI', 'IoT', '第三方系统']
+    for i, s in enumerate(exts):
+        chip(sl, CX + i * 1.283, 6.95, 1.235, 0.20, s, None, 'FFFFFF', 'FDE68A', 1.0, 0.04,
+             tc=AMBD, tsz=6.2)
+
+    # ================= 右侧 · 能力复用 & 价值 =================
+    rect(sl, RX, 0.62, RW, 0.26, '334155', None, 0, 0.05)
+    txt(sl, RX, 0.62, RW, 0.26, '能力复用 & 价值', sz=7.2, b=True, c='FFFFFF', align='c', anchor='m')
+    secs = [
+        ('微前端 ＋ 共享能力', CYN, ['一次构建 · 多端复用', 'BU 应用按需组合', '统一标准 · 统一技术栈',
+                                    '统一开发规范', '降低 80%+ 重复建设', '降低成本']),
+        ('数据价值', AZ, ['数据统一 · 洞察驱动', 'HCP Pool 打通数据', '构建客户 360', '赋能精准运营与 AI']),
+        ('插件生态', 'BE185D', ['插件扩展 · 生态开放', 'Plugin Container', '快速扩展能力', '支持创新与合作']),
+        ('智能运营', PUR, ['智能运营 · 降本增效', 'AI 赋能运营全流程', '提升效率与体验']),
+    ]
+    yy = 0.96
+    for name, c, items in secs:
+        oval(sl, RX + 0.06, yy + 0.035, 0.08, 0.08, c)
+        txt(sl, RX + 0.20, yy, RW - 0.24, 0.13, name, sz=5.8, b=True, c=SUB)
+        yy += 0.17
+        for s in items:
+            chip(sl, RX, yy, RW, 0.20, s, None, 'FFFFFF', BORDER, 1.0, 0.04, tc=SUB, tsz=5.6)
+            yy += 0.25
+        yy += 0.12
+    tags = [('渠道与接入', GRN), ('平台能力', AZ), ('应用与体验', CYN),
+            ('数据资产', PUR), ('共享能力', AMB), ('基础设施', SLA)]
+    for i, (t, c) in enumerate(tags):
+        tx = RX + (i % 2) * 0.82
+        ty = 6.42 + (i // 2) * 0.30
+        chip(sl, tx, ty, 0.77, 0.24, t, None, 'FFFFFF', BORDER, 1.0, 0.04, tc=c, tsz=5.6)
+    txt(sl, 0.22, 7.28, 12.89, 0.14,
+        '依据 archi.jpeg 原图重绘（PPT 原生形状）｜ 分层：渠道接入 → 统一接入 → 微前端应用 → 共享能力中心 → 平台基础 → 数据底座 → 数据与 AI 平台 ｜ 外部系统对接',
+        sz=5.8, c=FAINT, align='c')
 def build():
     prs = Presentation()
     prs.slide_width = Inches(13.333)
@@ -276,6 +435,7 @@ def build():
     prs.core_properties.author = 'One-Abbott Platform'
     slide_reuse(prs)
     slide_mfe(prs)
+    slide_archi(prs)
     import os as _os
     out = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), OUT_NAME)
     prs.save(out)
