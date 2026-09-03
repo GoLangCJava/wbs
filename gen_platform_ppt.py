@@ -83,18 +83,24 @@ def slide_reuse(prs):
         ('Event Hub', '会议 · 报名签到 · 积分', '复用：API · 事件 · MF', L_GRN, B_GRN),
         ('Customer Hub', 'HCP / HCO · OneID · Consent', '复用：API · 事件', L_CYN, B_CYN),
         ('Sales Hub', '拜访 · 打卡 · 离线同步', '复用：API · 事件', L_AMB, B_AMB),
-        ('Service Hub', '工单 · SLA · 备件 · IoT', '复用：API · 事件 · MF', 'F6F8FA', 'CBD5E1'),
-        ('AI Hub', 'model-gateway · RAG · Copilot', '复用：API · MF', L_PUR, B_PUR),
-        ('Plugin Hub', '插件 API · 租户级启用', '复用：API · 事件 · MF', 'FDF2F8', 'F9A8D4'),
-        ('横切服务', 'identity · 通知 · 工作流 · 审计', '复用：API', 'FFF7ED', 'FED7AA'),
     ]
     for i, (t, s1, s2, lf, bl) in enumerate(hubs):
-        hx = 0.74 + (i % 4) * 1.92
-        hy = 2.98 + (i // 4) * 0.74
-        rect(sl, hx, hy, 1.85, 0.66, lf, bl, 1.2, 0.05, shadow=True)
-        txt(sl, hx + 0.05, hy + 0.045, 1.75, 0.14, t, sz=7.2, b=True, c=INK, align='c')
-        txt(sl, hx + 0.05, hy + 0.225, 1.75, 0.13, s1, sz=5.7, c=MUT, align='c')
-        txt(sl, hx + 0.05, hy + 0.42, 1.75, 0.13, s2, sz=5.6, c=AZD, b=True, align='c')
+        hx = 0.74 + i * 1.92
+        rect(sl, hx, 2.98, 1.85, 0.66, lf, bl, 1.2, 0.05, shadow=True)
+        txt(sl, hx + 0.05, 3.025, 1.75, 0.14, t, sz=7.2, b=True, c=INK, align='c')
+        txt(sl, hx + 0.05, 3.205, 1.75, 0.13, s1, sz=5.7, c=MUT, align='c')
+        txt(sl, hx + 0.05, 3.40, 1.75, 0.13, s2, sz=5.6, c=AZD, b=True, align='c')
+    hubs2 = [
+        ('Service Hub', '工单 · SLA · 备件 · IoT', '复用：API · 事件 · MF', 'F6F8FA', 'CBD5E1'),
+        ('Plugin Hub', '插件 API · 租户级启用', '复用：API · 事件 · MF', 'FDF2F8', 'F9A8D4'),
+        ('横切服务', '身份 · 通知 · 工作流 · 规则 · 审计 · 文件', '所有 Hub 共用的技术能力 · API / SDK 复用', 'FFF7ED', 'FED7AA'),
+    ]
+    for i, (t, s1, s2, lf, bl) in enumerate(hubs2):
+        hx = 0.74 + i * 2.58
+        rect(sl, hx, 3.72, 2.50, 0.66, lf, bl, 1.2, 0.05, shadow=True)
+        txt(sl, hx + 0.05, 3.765, 2.40, 0.14, t, sz=7.2, b=True, c=INK, align='c')
+        txt(sl, hx + 0.05, 3.945, 2.40, 0.13, s1, sz=5.7, c=MUT, align='c')
+        txt(sl, hx + 0.05, 4.14, 2.40, 0.13, s2, sz=5.6, c=AZD, b=True, align='c')
     txt(sl, 0.40, 4.42, 8.00, 0.15,
         '消费三形态：① API 复用（BFF / 应用 → 内部 APIM · OpenAPI 契约 · 版本并存）　② 事件复用（订阅领域事件 · 解耦集成）　③ 模块复用（MF 远程模块多端挂载 → 详见下页）',
         sz=6.2, b=True, c=AMBD, align='c')
