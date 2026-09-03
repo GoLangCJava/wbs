@@ -192,7 +192,7 @@ def slide_mfe(prs):
     sl = prs.slides.add_slide(prs.slide_layouts[6]); _cur['i'] = 1
     sl.background.fill.solid(); sl.background.fill.fore_color.rgb = RGBColor.from_string(BG)
     title_bar(sl, '微前端架构设计 · 复用与独立交付（Module Federation）',
-              'React 18 · TS 5 · Rspack / Vite · Taro 小程序\n独立开发 · 独立部署 · 独立灰度 · 共享治理', CYN)
+              'React 18 · TS 5 · Rspack / Vite · Taro 小程序\n独立开发 · 独立部署 · 共享治理', CYN)
 
     # ================= ① 分层设计 =================
     rect(sl, 0.22, 0.62, 12.89, 2.14, 'FFFFFF', BORDER, 1.2, 0.08, shadow=True)
