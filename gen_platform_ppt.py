@@ -93,7 +93,7 @@ def slide_reuse(prs):
     hubs2 = [
         ('Service Hub', '工单 · SLA · 备件 · IoT', '复用：API · 事件 · MF', 'F6F8FA', 'CBD5E1'),
         ('Plugin Hub', '插件 API · 租户级启用', '复用：API · 事件 · MF', 'FDF2F8', 'F9A8D4'),
-        ('横切服务', '身份 · 通知 · 工作流 · 规则 · 审计 · 文件', '所有 Hub 共用的技术能力 · API / SDK 复用', 'FFF7ED', 'FED7AA'),
+        ('通用服务', '身份 · 通知 · 工作流 · 规则 · 审计', '所有 Hub 共用的技术能力 · API / SDK 复用', 'FFF7ED', 'FED7AA'),
     ]
     for i, (t, s1, s2, lf, bl) in enumerate(hubs2):
         hx = 0.74 + i * 2.58
@@ -113,7 +113,7 @@ def slide_reuse(prs):
     chip(sl, 0.36, 4.85, 0.94, 0.28, '05 事件骨干', None, 'FFFFFF', ORG, 1.2, 0.04, tc=AMBD, tsz=6.6)
     chip(sl, 1.38, 4.85, 3.44, 0.28, 'Service Bus · 领域事件', 'CloudEvents · Outbox · 幂等 / DLQ',
          'FFFFFF', ORG, 1.1, 0.04, tc=INK, tsz=6.4, sc=MUT, ssz=5.8)
-    chip(sl, 4.90, 4.85, 3.44, 0.28, 'Event Hub · 行为流', '埋点 → 实时标签 → 湖仓',
+    chip(sl, 4.90, 4.85, 3.44, 0.28, 'Event Hub · 行为流', '埋点 → 实时标签',
          'FFFFFF', ORG, 1.1, 0.04, tc=INK, tsz=6.4, sc=MUT, ssz=5.8)
     for ax in (2.60, 6.00):
         seg(sl, ax, 5.22, ax, 5.32, AZ, 1.8)
@@ -121,12 +121,12 @@ def slide_reuse(prs):
     # ---------- 06 数据与智能底座 ----------
     rect(sl, LX, 5.32, LW, 0.92, L_BLUE, B_BLUE, 1.2, 0.08)
     txt(sl, 0.40, 5.39, 6.0, 0.15, '06 数据与智能底座 · Data / AI / Cloud —— 数据与 AI 同样只建一次', sz=8.2, b=True, c='1D4ED8')
-    bases = [('HCP Pool', 'OneID · Consent · C360'), ('湖仓 · Fabric', 'B→S→G · C360 宽表'),
-             ('AI 平台', '模型网关 · RAG · Copilot'), ('Landing Zone', 'AKS · GitOps · OTel')]
+    bases = [('HCP Pool', 'OneID · Consent · C360'), ('AI 平台', '模型网关 · RAG · Copilot'),
+             ('Landing Zone', 'AKS · GitOps · OTel')]
     xx = 0.40
     for t, s in bases:
-        chip(sl, xx, 5.60, 1.95, 0.50, t, s, 'FFFFFF', '93C5FD', 1.1, 0.05, tc=INK, tsz=7.0, sc=MUT, ssz=5.8)
-        xx += 2.02
+        chip(sl, xx, 5.60, 2.62, 0.50, t, s, 'FFFFFF', '93C5FD', 1.1, 0.05, tc=INK, tsz=7.0, sc=MUT, ssz=5.8)
+        xx += 2.69
 
     # ================= 右侧 · 复用面板 =================
     # ---- A 复用前后对比 ----
@@ -202,7 +202,7 @@ def slide_mfe(prs):
                                       ('平台团队统一维护', {'sz': 5.4, 'c': MUT})],
          None, L_CYN, B_CYNB, 1.2, 0.05)
     l1 = [('路由 / 布局', 'RBAC 菜单下发'), ('SSO 会话', '全局权限 SDK'), ('Design Tokens', '主题 / 暗色'),
-          ('事件总线', 'mitt 跨模块通信'), ('MF 注册表', 'manifest 版本 / 灰度'), ('错误兜底', '失败降级占位')]
+          ('事件总线', 'mitt 跨模块通信'), ('MF 注册表', 'manifest 版本管理'), ('错误兜底', '失败降级占位')]
     xx = 1.78
     for t, s in l1:
         chip(sl, xx, 0.94, 1.78, 0.44, [(t, {'sz': 6.8, 'b': True, 'c': INK}), (s, {'sz': 5.6, 'c': MUT})],
@@ -237,7 +237,7 @@ def slide_mfe(prs):
     # ================= ② 运行时加载 / ③ 通信隔离 =================
     rect(sl, 0.22, 2.88, 6.30, 1.54, 'FFFFFF', BORDER, 1.2, 0.07, shadow=True)
     txt(sl, 0.36, 2.96, 5.9, 0.15, '② 运行时加载与版本协商（怎么跑起来）', sz=8.2, b=True, c=INK)
-    steps = [('① Shell 启动', '引导 / 鉴权'), ('② 拉取 manifest', '版本 ＋ 灰度比例'), ('③ 解析远程入口', 'CDN URL'),
+    steps = [('① Shell 启动', '引导 / 鉴权'), ('② 拉取 manifest', '版本清单'), ('③ 解析远程入口', 'CDN URL'),
              ('④ 加载 MF', 'import remote'), ('⑤ 版本协商', 'react singleton'), ('⑥ 挂载渲染', '路由 / 权限校验')]
     for i, (t, s) in enumerate(steps):
         sx = 0.36 + (i % 3) * 1.98
@@ -282,16 +282,16 @@ def slide_mfe(prs):
 
     # ================= ⑤ 独立交付与插件扩展 =================
     rect(sl, 6.66, 4.52, 6.45, 1.74, 'FFFFFF', BORDER, 1.2, 0.07, shadow=True)
-    txt(sl, 6.80, 4.60, 6.0, 0.15, '⑤ 独立交付 · 灰度发布与插件扩展', sz=8.2, b=True, c=INK)
+    txt(sl, 6.80, 4.60, 6.0, 0.15, '⑤ 独立交付与插件扩展', sz=8.2, b=True, c=INK)
     rel = [('① 构建', 'CI 产物'), ('② CDN', '不可变版本'), ('③ manifest', 'PR 审批'),
-           ('④ 灰度', '1→10→100%'), ('⑤ 回滚', '分钟级')]
+           ('④ 回滚', '分钟级')]
     xx = 6.80
     for i, (t, s) in enumerate(rel):
-        chip(sl, xx, 4.80, 1.12, 0.44, [(t, {'sz': 6.4, 'b': True, 'c': INK}), (s, {'sz': 5.5, 'c': MUT})],
+        chip(sl, xx, 4.80, 1.42, 0.44, [(t, {'sz': 6.4, 'b': True, 'c': INK}), (s, {'sz': 5.5, 'c': MUT})],
              None, L_GRN, B_GRN, 1.1, 0.05)
-        if i < 4:
-            seg(sl, xx + 1.12, 5.02, xx + 1.21, 5.02, GRN, 1.3)
-        xx += 1.21
+        if i < 3:
+            seg(sl, xx + 1.42, 5.02, xx + 1.56, 5.02, GRN, 1.3)
+        xx += 1.56
     txt(sl, 6.80, 5.30, 6.18, 0.13, '模块独立流水线互不阻塞 · 回滚 = manifest 指回旧版本 · 质量门禁：Playwright 冒烟 ＋ Shell E2E',
         sz=6.0, c=SUB)
     rect(sl, 6.80, 5.50, 6.18, 0.66, 'FDF2F8', 'F9A8D4', 1.1, 0.05)
@@ -301,7 +301,7 @@ def slide_mfe(prs):
         anchor='m', leading=1.25)
 
     # ---- 图例与底部 ----
-    leg = [('Shell（平台团队）', SLA), ('远程模块 / 插件', PUR), ('发布 / 灰度链路', GRN), ('契约 / 安全', AZ)]
+    leg = [('Shell（平台团队）', SLA), ('远程模块 / 插件', PUR), ('发布链路', GRN), ('契约 / 安全', AZ)]
     xx = 0.40
     for t, c in leg:
         oval(sl, xx, 6.44, 0.09, 0.09, c)
