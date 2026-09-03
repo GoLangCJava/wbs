@@ -278,8 +278,10 @@ def slide_archi(prs):
     CX, CW = 1.24, 10.18          # 主内容区
     RX, RW = 11.52, 1.59          # 右侧价值栏
 
+    BAND_R = 11.46
+
     def band(y, h, fill, bl, cjk, en=None, tc=INK, ec=MUT):
-        rect(sl, LBX, y, LBW + 0.04 + CW, h, fill, bl, 1.2, 0.07)
+        rect(sl, LBX, y, BAND_R - LBX, h, fill, bl, 1.2, 0.07)
         paras = [(cjk, {'sz': 7.0, 'b': True, 'c': tc})]
         if en:
             paras.append((en, {'sz': 4.8, 'c': ec}))
@@ -289,7 +291,7 @@ def slide_archi(prs):
     band(0.62, 0.40, L_GRN, B_GRN, '渠道接入层', tc=GRND)
     chs = ['微信公众号', '微信小程序', '企业微信', 'H5', 'Mobile App', 'PC Portal', 'CAM', 'CRM/其他系统']
     for i, s in enumerate(chs):
-        chip(sl, CX + i * 1.283, 0.72, 1.235, 0.20, s, None, 'FFFFFF', 'BBF7D0', 1.0, 0.04,
+        chip(sl, CX + i * 1.280, 0.72, 1.232, 0.20, s, None, 'FFFFFF', 'BBF7D0', 1.0, 0.04,
              tc=INK, tsz=6.4)
     # ---------- 02 One-Abbott Portal ----------
     rect(sl, CX, 1.08, CW, 0.24, L_BLUE, B_BLUE, 1.2, 0.05)
@@ -300,7 +302,7 @@ def slide_archi(prs):
     acc = [('OneID/SSO', '统一身份认证'), ('API Gateway', '统一 API 网关'), ('权限中心', 'RBAC / ABAC'),
            ('消息中心', '站内信 / 通知'), ('搜索中心', '全局搜索服务'), ('个性化中心', '用户偏好 / 配置')]
     for i, (t, s) in enumerate(acc):
-        chip(sl, CX + i * 1.715, 1.52, 1.665, 0.30, t, s, 'FFFFFF', 'CBD5E1', 1.1, 0.05,
+        chip(sl, CX + i * 1.700, 1.52, 1.700, 0.30, t, s, 'FFFFFF', 'CBD5E1', 1.1, 0.05,
              tc=INK, tsz=6.8, sc=MUT, ssz=5.8)
     # ---------- 04 微前端应用层 ----------
     band(1.96, 1.54, L_CYN, B_CYNB, '微前端应用层', 'Micro Frontend', tc=CYND)
@@ -317,8 +319,8 @@ def slide_archi(prs):
         ('Plugin MF', '插件扩展', ['·术后随访', '·医学咨询', '·竞品情报'], 'FDF2F8', 'F9A8D4'),
     ]
     for i, (t, sub, bl, lf, blc) in enumerate(mfs):
-        mx = CX + i * 1.283
-        rect(sl, mx, 2.20, 1.235, 0.96, lf, blc, 1.2, 0.05, shadow=True)
+        mx = CX + i * 1.280
+        rect(sl, mx, 2.20, 1.232, 0.96, lf, blc, 1.2, 0.05, shadow=True)
         tc = 'BE185D' if lf == 'FDF2F8' else CYND
         txt(sl, mx + 0.04, 2.235, 1.155, 0.12, t, sz=5.8, b=True, c=tc, align='c')
         txt(sl, mx + 0.04, 2.375, 1.155, 0.14, sub, sz=6.6, b=True, c=INK, align='c')
@@ -340,7 +342,7 @@ def slide_archi(prs):
         ('Plugin 容器', '(Plugin Container)', ['·插件市场', '·插件管理', '·插件运行时', '·OpenAPI / SDK'], 'FDF2F8', 'F9A8D4', 'BE185D'),
     ]
     for i, (t, en, items, lf, bl, tc) in enumerate(hubs):
-        hx = CX + i * 1.467
+        hx = CX + i * 1.463
         rect(sl, hx, 3.66, 1.42, 1.18, lf, bl, 1.2, 0.05, shadow=True)
         txt(sl, hx + 0.03, 3.70, 1.36, 0.13, t, sz=6.4, b=True, c=INK, align='c')
         txt(sl, hx + 0.03, 3.85, 1.36, 0.11, en, sz=4.8, b=True, c=tc, align='c')
@@ -353,7 +355,7 @@ def slide_archi(prs):
              ('日志与审计', 'Log & Audit'), ('文件存储', 'Blob Storage'),
              ('监控告警', 'Application Insights')]
     for i, (t, s) in enumerate(plats):
-        chip(sl, CX + i * 1.467, 5.08, 1.42, 0.28, t, s, 'FFFFFF', B_PUR, 1.1, 0.04,
+        chip(sl, CX + i * 1.463, 5.08, 1.42, 0.28, t, s, 'FFFFFF', B_PUR, 1.1, 0.04,
              tc=INK, tsz=6.2, sc=MUT, ssz=5.0)
     # ---------- 07 数据底座层 ----------
     band(5.50, 0.80, L_BLUE, B_BLUE, '数据底座层', 'HCP Pool', tc='1D4ED8')
@@ -390,13 +392,13 @@ def slide_archi(prs):
            ('数据分析', 'Microsoft Fabric · 建模/分析/共享', L_BLUE, B_BLUE, AZD),
            ('可视化', 'Power BI · 报表/仪表盘', L_AMB, B_AMB, AMBD)]
     for i, (t, s, lf, bl, tc) in enumerate(dai):
-        chip(sl, CX + i * 1.715, 6.46, 1.665, 0.28, t, s, lf, bl, 1.1, 0.04, tc=INK, tsz=6.4,
+        chip(sl, CX + i * 1.700, 6.46, 1.700, 0.28, t, s, lf, bl, 1.1, 0.04, tc=INK, tsz=6.4,
              sc=MUT, ssz=5.0)
     # ---------- 09 外部系统对接 ----------
     band(6.88, 0.34, 'FFF7ED', 'FED7AA', '外部系统对接', tc='B45309')
     exts = ['ERP', 'SAP', 'CRM', 'MDM', 'EHR', 'BI', 'IoT', '第三方系统']
     for i, s in enumerate(exts):
-        chip(sl, CX + i * 1.283, 6.95, 1.235, 0.20, s, None, 'FFFFFF', 'FDE68A', 1.0, 0.04,
+        chip(sl, CX + i * 1.280, 6.95, 1.232, 0.20, s, None, 'FFFFFF', 'FDE68A', 1.0, 0.04,
              tc=AMBD, tsz=6.2)
 
     # ================= 右侧 · 能力复用 & 价值 =================
