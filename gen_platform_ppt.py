@@ -31,8 +31,7 @@ def slide_reuse(prs):
     title_bar(sl, '总体技术架构 · Capability First —— Build Once, Reuse Everywhere',
               '复用三形态：API · 事件 · 微前端模块\n多租户：ADC / EPD / MD / APOC → 平台租户', AZ)
 
-    LX, LW = 0.22, 8.34          # 左主列
-    RX, RW = 8.66, 4.45          # 右复用面板
+    LX, LW = 0.22, 12.89         # 主列全宽
 
     # ---------- 01 渠道层 ----------
     rect(sl, LX, 0.62, LW, 0.78, L_GRN, B_GRN, 1.2, 0.08)
@@ -41,21 +40,21 @@ def slide_reuse(prs):
            ('企业微信', '侧边栏 · 拜访 / C360'), ('App · RN', '离线拜访 / 工单'), ('Portal', '运营后台')]
     xx = 0.40
     for t, s in chs:
-        chip(sl, xx, 0.92, 1.55, 0.40, t, s, 'FFFFFF', 'BBF7D0', 1.0, 0.05, tsz=6.8, sc=MUT, ssz=5.8)
-        xx += 1.615
-    for ax in (2.60, 6.00):
+        chip(sl, xx, 0.92, 2.42, 0.40, t, s, 'FFFFFF', 'BBF7D0', 1.0, 0.05, tsz=7.2, sc=MUT, ssz=6.0)
+        xx += 2.50
+    for ax in (4.20, 8.80):
         seg(sl, ax, 1.40, ax, 1.50, GRN, 1.8)
-    txt(sl, 2.70, 1.395, 1.2, 0.11, 'HTTPS · SSO', sz=5.6, b=True, c=GRN)
+    txt(sl, 4.30, 1.395, 1.2, 0.11, 'HTTPS · SSO', sz=5.6, b=True, c=GRN)
 
     # ---------- 02 接入边缘 ----------
     rect(sl, LX, 1.50, LW, 0.50, 'F8FAFC', 'CBD5E1', 1.2, 0.07)
     txt(sl, 0.36, 1.61, 1.10, 0.28, '02 接入边缘', sz=7.6, b=True, c=SUB, anchor='m')
-    chip(sl, 1.52, 1.61, 1.05, 0.28, 'CDN ＋ WAF', None, 'FFFFFF', 'CBD5E1', 1.0, 0.04, tc=INK, tsz=6.4)
-    chip(sl, 2.63, 1.61, 1.50, 0.28, '外部 APIM · 公网 API', None, 'FFFFFF', AZ, 1.2, 0.04, tc=AZD, tsz=6.4)
-    chip(sl, 4.19, 1.61, 1.60, 0.28, 'Entra ID · 内部 SSO', None, 'FFFFFF', B_BLUE, 1.0, 0.04, tc=AZD, tsz=6.4)
-    chip(sl, 5.85, 1.61, 2.50, 0.28, 'identity-service 微信 / 验证码 → OneID', None,
-         'FFFFFF', B_BLUE, 1.0, 0.04, tc=AZD, tsz=6.2)
-    for ax in (2.60, 6.00):
+    chip(sl, 1.52, 1.61, 1.70, 0.28, 'CDN ＋ WAF', None, 'FFFFFF', 'CBD5E1', 1.0, 0.04, tc=INK, tsz=6.6)
+    chip(sl, 3.30, 1.61, 2.70, 0.28, '外部 APIM · 公网 API', None, 'FFFFFF', AZ, 1.2, 0.04, tc=AZD, tsz=6.6)
+    chip(sl, 6.08, 1.61, 2.90, 0.28, 'Entra ID · 内部 SSO', None, 'FFFFFF', B_BLUE, 1.0, 0.04, tc=AZD, tsz=6.6)
+    chip(sl, 9.06, 1.61, 3.80, 0.28, 'identity-service 微信 / 验证码 → OneID', None,
+         'FFFFFF', B_BLUE, 1.0, 0.04, tc=AZD, tsz=6.4)
+    for ax in (4.20, 8.80):
         seg(sl, ax, 2.00, ax, 2.10, CYN, 1.8)
 
     # ---------- 03 BFF ----------
@@ -64,16 +63,16 @@ def slide_reuse(prs):
     bfs = ['hcp-bff · 小程序 / H5', 'wework-bff · 企微侧边栏', 'app-bff · 离线同步', 'portal-bff · 运营门户']
     xx = 0.40
     for s in bfs:
-        chip(sl, xx, 2.36, 1.90, 0.26, s, None, 'FFFFFF', CYN, 1.1, 0.04, tc=INK, tsz=6.6)
-        xx += 1.97
-    for ax in (2.60, 6.00):
+        chip(sl, xx, 2.36, 3.02, 0.26, s, None, 'FFFFFF', CYN, 1.1, 0.04, tc=INK, tsz=6.8)
+        xx += 3.12
+    for ax in (4.20, 8.80):
         seg(sl, ax, 2.68, ax, 2.78, CYN, 1.8)
-    txt(sl, 6.10, 2.675, 1.0, 0.11, '聚合调用', sz=5.6, b=True, c=CYN)
+    txt(sl, 8.90, 2.675, 1.0, 0.11, '聚合调用', sz=5.6, b=True, c=CYN)
 
     # ---------- 04 能力层 ----------
     rect(sl, LX, 2.78, LW, 1.88, 'FFFFFF', BORDER, 1.2, 0.08)
     txt(sl, 0.40, 2.85, 5.10, 0.15, '04 能力层 · Capability Hub —— 一次建设（Build Once）', sz=8.5, b=True, c='334155')
-    txt(sl, 5.60, 2.86, 2.84, 0.13, '一 Hub 一限界上下文 · Database-per-Service', sz=5.9, c=FAINT, align='r')
+    txt(sl, 9.06, 2.86, 3.95, 0.13, '一 Hub 一限界上下文 · Database-per-Service', sz=5.9, c=FAINT, align='r')
     rect(sl, 0.36, 2.98, 0.30, 1.40, L_BLUE, B_BLUE, 1.2, 0.05)
     txt(sl, 0.36, 2.98, 0.30, 1.40, '内部 APIM', sz=6.0, b=True, c=AZD, align='c', anchor='m', vert=True)
     seg(sl, 0.66, 3.31, 0.72, 3.31, AZ, 1.3)
@@ -85,37 +84,37 @@ def slide_reuse(prs):
         ('Sales Hub', '拜访 · 打卡 · 离线同步', '复用：API · 事件', L_AMB, B_AMB),
     ]
     for i, (t, s1, s2, lf, bl) in enumerate(hubs):
-        hx = 0.74 + i * 1.92
-        rect(sl, hx, 2.98, 1.85, 0.66, lf, bl, 1.2, 0.05, shadow=True)
-        txt(sl, hx + 0.05, 3.025, 1.75, 0.14, t, sz=7.2, b=True, c=INK, align='c')
-        txt(sl, hx + 0.05, 3.205, 1.75, 0.13, s1, sz=5.7, c=MUT, align='c')
-        txt(sl, hx + 0.05, 3.40, 1.75, 0.13, s2, sz=5.6, c=AZD, b=True, align='c')
+        hx = 0.74 + i * 3.02
+        rect(sl, hx, 2.98, 2.92, 0.66, lf, bl, 1.2, 0.05, shadow=True)
+        txt(sl, hx + 0.05, 3.025, 2.82, 0.14, t, sz=7.2, b=True, c=INK, align='c')
+        txt(sl, hx + 0.05, 3.205, 2.82, 0.13, s1, sz=5.7, c=MUT, align='c')
+        txt(sl, hx + 0.05, 3.40, 2.82, 0.13, s2, sz=5.6, c=AZD, b=True, align='c')
     hubs2 = [
         ('Service Hub', '工单 · SLA · 备件 · IoT', '复用：API · 事件 · MF', 'F6F8FA', 'CBD5E1'),
         ('Plugin Hub', '插件 API · 租户级启用', '复用：API · 事件 · MF', 'FDF2F8', 'F9A8D4'),
         ('通用服务', '身份 · 通知 · 工作流 · 规则 · 审计', '所有 Hub 共用的技术能力 · API / SDK 复用', 'FFF7ED', 'FED7AA'),
     ]
     for i, (t, s1, s2, lf, bl) in enumerate(hubs2):
-        hx = 0.74 + i * 2.58
-        rect(sl, hx, 3.72, 2.50, 0.66, lf, bl, 1.2, 0.05, shadow=True)
-        txt(sl, hx + 0.05, 3.765, 2.40, 0.14, t, sz=7.2, b=True, c=INK, align='c')
-        txt(sl, hx + 0.05, 3.945, 2.40, 0.13, s1, sz=5.7, c=MUT, align='c')
-        txt(sl, hx + 0.05, 4.14, 2.40, 0.13, s2, sz=5.6, c=AZD, b=True, align='c')
-    txt(sl, 0.40, 4.42, 8.00, 0.15,
+        hx = 0.74 + i * 4.05
+        rect(sl, hx, 3.72, 3.95, 0.66, lf, bl, 1.2, 0.05, shadow=True)
+        txt(sl, hx + 0.05, 3.765, 3.85, 0.14, t, sz=7.2, b=True, c=INK, align='c')
+        txt(sl, hx + 0.05, 3.945, 3.85, 0.13, s1, sz=5.7, c=MUT, align='c')
+        txt(sl, hx + 0.05, 4.14, 3.85, 0.13, s2, sz=5.6, c=AZD, b=True, align='c')
+    txt(sl, 0.40, 4.42, 12.50, 0.15,
         '消费三形态：① API 复用（BFF / 应用 → 内部 APIM · OpenAPI 契约 · 版本并存）　② 事件复用（订阅领域事件 · 解耦集成）　③ 模块复用（MF 远程模块多端挂载 → 详见下页）',
         sz=6.2, b=True, c=AMBD, align='c')
-    for ax in (2.60, 6.00):
+    for ax in (4.20, 8.80):
         seg(sl, ax, 4.66, ax, 4.76, AMB, 1.8)
-    txt(sl, 2.70, 4.655, 1.2, 0.11, '事件 / CDC', sz=5.6, b=True, c=AMB)
+    txt(sl, 4.30, 4.655, 1.2, 0.11, '事件 / CDC', sz=5.6, b=True, c=AMB)
 
     # ---------- 05 事件骨干 ----------
     rect(sl, LX, 4.76, LW, 0.46, 'FFF7ED', 'FED7AA', 1.2, 0.07)
     chip(sl, 0.36, 4.85, 0.94, 0.28, '05 事件骨干', None, 'FFFFFF', ORG, 1.2, 0.04, tc=AMBD, tsz=6.6)
-    chip(sl, 1.38, 4.85, 3.44, 0.28, 'Service Bus · 领域事件', 'CloudEvents · Outbox · 幂等 / DLQ',
+    chip(sl, 1.38, 4.85, 5.60, 0.28, 'Service Bus · 领域事件', 'CloudEvents · Outbox · 幂等 / DLQ',
          'FFFFFF', ORG, 1.1, 0.04, tc=INK, tsz=6.4, sc=MUT, ssz=5.8)
-    chip(sl, 4.90, 4.85, 3.44, 0.28, 'Event Hub · 行为流', '埋点 → 实时标签',
+    chip(sl, 7.06, 4.85, 5.60, 0.28, 'Event Hub · 行为流', '埋点 → 实时标签',
          'FFFFFF', ORG, 1.1, 0.04, tc=INK, tsz=6.4, sc=MUT, ssz=5.8)
-    for ax in (2.60, 6.00):
+    for ax in (4.20, 8.80):
         seg(sl, ax, 5.22, ax, 5.32, AZ, 1.8)
 
     # ---------- 06 数据与智能底座 ----------
@@ -125,64 +124,20 @@ def slide_reuse(prs):
              ('Landing Zone', 'AKS · GitOps · OTel')]
     xx = 0.40
     for t, s in bases:
-        chip(sl, xx, 5.60, 2.62, 0.50, t, s, 'FFFFFF', '93C5FD', 1.1, 0.05, tc=INK, tsz=7.0, sc=MUT, ssz=5.8)
-        xx += 2.69
+        chip(sl, xx, 5.60, 4.02, 0.50, t, s, 'FFFFFF', '93C5FD', 1.1, 0.05, tc=INK, tsz=7.2, sc=MUT, ssz=6.0)
+        xx += 4.12
 
-    # ================= 右侧 · 复用面板 =================
-    # ---- A 复用前后对比 ----
-    rect(sl, RX, 0.62, RW, 1.90, 'FFFFFF', BORDER, 1.2, 0.07, shadow=True)
-    txt(sl, RX + 0.12, 0.70, RW - 0.24, 0.16, '从重复建设到平台复用（archi.md §6）', sz=8.2, b=True, c=INK)
-    rect(sl, RX + 0.12, 0.94, 1.86, 1.44, L_ROS, 'F87171', 1.1, 0.05, dash=DASH)
-    txt(sl, RX + 0.22, 1.00, 1.66, 0.14, '当前 · 各自建设 ✗', sz=7.0, b=True, c='B91C1C')
-    for i, s in enumerate(['ADC / EPD / MD / APOC', '各建 内容·会议·积分', '≈ 12 套重复实现', '数据孤岛 · 体验割裂']):
-        txt(sl, RX + 0.22, 1.20 + i * 0.24, 1.68, 0.20, s, sz=5.9, c=SUB)
-    seg(sl, RX + 2.02, 1.66, RX + 2.32, 1.66, MUT, 2.0)
-    rect(sl, RX + 2.36, 0.94, 1.97, 1.44, L_GRN, B_GRN, 1.2, 0.05)
-    txt(sl, RX + 2.46, 1.00, 1.77, 0.14, '目标 · 平台统一 ✓', sz=7.0, b=True, c=GRND)
-    for i, s in enumerate(['Capability Hub 1 套能力', '应用 = 租户按需组合', '能力 / 数据 / AI 三重复用', 'Build Once · Reuse Everywhere']):
-        txt(sl, RX + 2.46, 1.20 + i * 0.24, 1.79, 0.20, s, sz=5.9, c=SUB, b=(i == 3))
-
-    # ---- B 复用矩阵 ----
-    rect(sl, RX, 2.62, RW, 2.70, 'FFFFFF', BORDER, 1.2, 0.07, shadow=True)
-    txt(sl, RX + 0.12, 2.70, RW - 0.24, 0.16, '能力复用矩阵 · 一次建设 → 处处消费', sz=8.2, b=True, c=INK)
-    apps = [('小程序', 'H5'), ('企微', ''), ('App', ''), ('Portal', ''), ('插件', '')]
-    cols_x = [RX + 1.32 + i * 0.60 for i in range(5)]
-    for i, (a1, a2) in enumerate(apps):
-        paras = [(a1, {'sz': 5.6, 'b': True, 'c': SUB})]
-        if a2:
-            paras.append((a2, {'sz': 5.6, 'b': True, 'c': SUB}))
-        txt(sl, cols_x[i] - 0.28, 2.92, 0.56, 0.34, paras, align='c', anchor='m', leading=1.05)
-    seg(sl, RX + 0.12, 3.26, RX + RW - 0.12, 3.26, BORDER, 0.8, arrow=False)
-    # ● 复用  ○ 按需裁剪  – 不涉及
-    matrix = [
-        ('内容学术', [2, 2, 1, 2, 2]), ('会议积分', [2, 1, 1, 2, 1]), ('客户 360', [1, 2, 2, 2, 2]),
-        ('拜访绩效', [0, 2, 2, 2, 0]), ('报修服务', [0, 0, 2, 2, 0]), ('AI 能力', [2, 2, 1, 2, 2]),
-    ]
-    for r, (cap, marks) in enumerate(matrix):
-        ry = 3.32 + r * 0.29
-        txt(sl, RX + 0.12, ry, 1.14, 0.24, cap, sz=6.2, c=INK, anchor='m')
-        for c, m in enumerate(marks):
-            cx = cols_x[c]
-            if m == 2:
-                oval(sl, cx - 0.05, ry + 0.07, 0.10, 0.10, GRN)
-            elif m == 1:
-                oval(sl, cx - 0.05, ry + 0.07, 0.10, 0.10, 'FFFFFF', GRN, 1.0)
-            else:
-                txt(sl, cx - 0.10, ry, 0.20, 0.24, '–', sz=6.0, c=FAINT, align='c', anchor='m')
-    txt(sl, RX + 0.12, 5.06, RW - 0.24, 0.14,
-        '● 直接复用　○ 按需裁剪　– 不涉及 ｜ 例：新插件「术后随访」= C360 ＋ 内容 ＋ 积分 ＋ 通知，零新建',
-        sz=5.8, b=True, c=GRND)
-
-    # ---- C 租户级复用 ----
-    rect(sl, RX, 5.42, RW, 0.82, L_BLUE, B_BLUE, 1.1, 0.06)
-    txt(sl, RX + 0.12, 5.49, RW - 0.24, 0.14, '租户级复用 · 治理与计量', sz=7.8, b=True, c='1D4ED8')
+    # ---- 租户级复用（全宽横条） ----
+    rect(sl, 0.22, 6.34, 12.89, 0.44, L_BLUE, B_BLUE, 1.1, 0.06)
+    txt(sl, 0.36, 6.34, 1.50, 0.44, '租户级复用', sz=7.4, b=True, c='1D4ED8', anchor='m')
     ten = ['tid 全链路 · SQL 行级安全', 'feature flag 按租户启用能力', 'APIM 配额 / 限流', '成本按 tid 计量分摊']
-    for i, s in enumerate(ten):
-        chip(sl, RX + 0.12 + (i % 2) * 2.12, 5.66 + (i // 2) * 0.26, 2.04, 0.22, s, None,
-             'FFFFFF', '93C5FD', 1.0, 0.04, tc=SUB, tsz=5.9)
+    xx = 1.96
+    for s in ten:
+        chip(sl, xx, 6.42, 2.62, 0.28, s, None, 'FFFFFF', '93C5FD', 1.0, 0.04, tc=SUB, tsz=6.2)
+        xx += 2.72
 
     # ---- 底部结论 ----
-    txt(sl, 0.22, 6.36, 12.89, 0.16,
+    txt(sl, 0.22, 6.92, 12.89, 0.16,
         '复用成效目标：12 套重复建设 → 1 套平台能力 ｜ 新渠道 / 新应用接入周期减半（只建 BFF 与视图）｜ 新场景 = 组合已有能力 ｜ 分层对应 archi.md：Experience → Application → Capability → Data → AI → Cloud',
         sz=6.4, c=MUT, align='c')
 
