@@ -366,30 +366,56 @@ def build():
                 'BA人天', '前端A·Wade', '前端B·FE-B', '后端A·DevB', '后端B·BE-B', '测试人天', 'SLC人天', '小计', '功能/组小计'],
                [10, 18, 13, 18, 26, 7, 8, 8, 8, 8, 7, 7, 7, 8])
     r = 3
-    cur_group = None
-    group_sum = 0.0
     sums = [0.0] * 8
-    rows_buf = []
+    st = {'mod': None, 'mod_start': None, 'grp': None, 'grp_start': None, 'grp_sum': 0.0}
+
+    def _style_col(c0, r0, r1, fill=None):
+        for rr in range(r0, r1):
+            c = ws.cell(rr, c0)
+            c.border = BORDER
+            if fill: c.fill = fill
+            c.alignment = CENTER
+
+    def close_grp(end_r):
+        g = st['grp']
+        if g is None:
+            return
+        r0, r1 = st['grp_start'], end_r          # 组区间 [r0, r1)
+        _style_col(3, r0, r1)                     # C 列：功能/组名称
+        _style_col(14, r0, r1, FILL_SEC)          # N 列：功能/组小计
+        ws.cell(r0, 3).font = F_SEC
+        ws.cell(r0, 14, round(st['grp_sum'], 2)).font = F_SEC
+        if r1 - r0 > 1:
+            ws.merge_cells(start_row=r0, start_column=3, end_row=r1 - 1, end_column=3)
+            ws.merge_cells(start_row=r0, start_column=14, end_row=r1 - 1, end_column=14)
+        st.update(grp=None, grp_start=None, grp_sum=0.0)
+
+    def close_mod(end_r):
+        if st['mod'] is None:
+            return
+        r0, r1 = st['mod_start'], end_r           # 模块区间 [r0, r1)
+        _style_col(2, r0, r1)                     # B 列：模块
+        ws.cell(r0, 2).font = F_SEC
+        if r1 - r0 > 1:
+            ws.merge_cells(start_row=r0, start_column=2, end_row=r1 - 1, end_column=2)
+        st.update(mod=None, mod_start=None)
+
     for item in E:
         no, mod, grp, task, desc, ba, wa, fb, db, bb, qa, slc = item
         total = ba + wa + fb + db + bb + qa + slc
-        key = (mod, grp)
-        if cur_group is not None and key != cur_group and grp:
-            ws.cell(r, 14, round(group_sum, 2)).font = F_SEC
-            ws.cell(r, 14).fill = FILL_SEC; ws.cell(r, 14).border = BORDER
-            r += 1
-            group_sum = 0.0
-        if grp:
-            cur_group = key
+        if grp:                                   # 新功能组：先收口上一组
+            close_grp(r)
+            st.update(grp=grp, grp_start=r)
+        if mod:                                   # 新模块：先收口上一模块
+            close_mod(r)
+            st.update(mod=mod, mod_start=r)
         vals = [no, mod, grp, task, desc, ba, wa, fb, db, bb, qa, slc, round(total, 2), None]
         r = put(ws, r, vals)
         for i, v in enumerate([ba, wa, fb, db, bb, qa, slc, total]):
             sums[i] += v
-        group_sum += total
-    if cur_group:
-        ws.cell(r, 14, round(group_sum, 2)).font = F_SEC
-        ws.cell(r, 14).fill = FILL_SEC; ws.cell(r, 14).border = BORDER
-        r += 1
+        st['grp_sum'] += total
+    close_grp(r)
+    close_mod(r)
     names = ['BA', '前端A·Wade', '前端B·FE-B', '后端A·DevB', '后端B·BE-B', '测试', 'SLC', '总计']
     r = put(ws, r, ['合计', '', '', '', ''] + [round(s, 2) for s in sums] + [None],
             font=F_SEC, fill=FILL_TOTAL)
